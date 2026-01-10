@@ -7,6 +7,7 @@ pub mod get;
 pub mod import;
 pub mod init;
 pub mod list;
+pub mod purge;
 pub mod ready;
 pub mod release;
 pub mod reopen;

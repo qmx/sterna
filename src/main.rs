@@ -167,6 +167,13 @@ enum Commands {
         /// Input file
         file: String,
     },
+
+    /// Remove all Sterna data from this repository
+    Purge {
+        /// Skip confirmation prompt
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 fn main() {
@@ -206,6 +213,7 @@ fn main() {
         } => commands::depend::run(source, needs, blocks, relates_to, parent, duplicates),
         Commands::Export { output } => commands::export::run(output),
         Commands::Import { file } => commands::import::run(file),
+        Commands::Purge { yes } => commands::purge::run(yes),
     };
 
     if let Err(e) = result {
