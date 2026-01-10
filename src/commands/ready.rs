@@ -7,7 +7,7 @@ use crate::index::{EdgeIndex, IssueIndex};
 use crate::storage;
 use crate::types::{EdgeType, Issue, Status};
 
-pub fn run() -> Result<(), Error> {
+pub fn run(json: bool) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
     let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
     let issue_index = IssueIndex::load(repo_path)?;
@@ -21,11 +21,11 @@ pub fn run() -> Result<(), Error> {
         all_issues.insert(id.clone(), issue);
     }
 
-    let mut ready_issues: Vec<&Issue> = Vec::new();
-    for issue in all_issues.values() {
+    let mut ready_issues: Vec<Issue> = Vec::new();
+    for issue in all_issues.into_values() {
         // Ready = open AND not claimed AND not blocked
         if issue.status == Status::Open && !issue.claimed {
-            if !is_blocked(&issue.id, &edge_index, &all_issues) {
+            if !is_blocked(&issue.id, &edge_index, &all_issues_for_blocking(&repo, &issue_index)?) {
                 ready_issues.push(issue);
             }
         }
@@ -33,18 +33,35 @@ pub fn run() -> Result<(), Error> {
 
     ready_issues.sort_by_key(|i| i.priority);
 
-    println!("{:<12} {:<8} {:<10} {}", "ID", "PRI", "TYPE", "TITLE");
-    println!("{}", "-".repeat(50));
-    for issue in ready_issues {
-        println!(
-            "{:<12} {:<8} {:<10} {}",
-            issue.id,
-            issue.priority.as_str(),
-            issue.issue_type.as_str(),
-            truncate(&issue.title, 40)
-        );
+    if json {
+        println!("{}", serde_json::to_string_pretty(&ready_issues)?);
+    } else {
+        println!("{:<12} {:<8} {:<10} {}", "ID", "PRI", "TYPE", "TITLE");
+        println!("{}", "-".repeat(50));
+        for issue in ready_issues {
+            println!(
+                "{:<12} {:<8} {:<10} {}",
+                issue.id,
+                issue.priority.as_str(),
+                issue.issue_type.as_str(),
+                truncate(&issue.title, 40)
+            );
+        }
     }
     Ok(())
+}
+
+fn all_issues_for_blocking(
+    repo: &Repository,
+    index: &IssueIndex,
+) -> Result<HashMap<String, Issue>, Error> {
+    let mut issues = HashMap::new();
+    for (id, oid) in &index.entries {
+        let data = storage::read_blob(repo, *oid)?;
+        let issue = Issue::from_json(&data)?;
+        issues.insert(id.clone(), issue);
+    }
+    Ok(issues)
 }
 
 /// Check if an issue is blocked by unclosed dependencies.

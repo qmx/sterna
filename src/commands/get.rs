@@ -6,7 +6,7 @@ use crate::index::IssueIndex;
 use crate::storage;
 use crate::types::Issue;
 
-pub fn run(id_prefix: String) -> Result<(), Error> {
+pub fn run(id_prefix: String, json: bool) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
     let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
     let index = IssueIndex::load(repo_path)?;
@@ -14,7 +14,12 @@ pub fn run(id_prefix: String) -> Result<(), Error> {
     let (_, oid) = index.find_unique(&id_prefix)?;
     let data = storage::read_blob(&repo, oid)?;
     let issue = Issue::from_json(&data)?;
-    print_issue(&issue);
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&issue)?);
+    } else {
+        print_issue(&issue);
+    }
     Ok(())
 }
 

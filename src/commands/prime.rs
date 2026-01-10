@@ -55,7 +55,7 @@ pub fn run() -> Result<(), Error> {
 
     // Always show ready issues
     eprintln!("## Ready Issues");
-    ready::run()?;
+    ready::run(false)?;
 
     Ok(())
 }

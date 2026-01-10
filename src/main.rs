@@ -52,12 +52,20 @@ enum Commands {
         /// Filter by type: epic, task, bug, feature, chore
         #[arg(short = 't', long = "type")]
         issue_type: Option<String>,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
     },
 
     /// Get issue details
     Get {
         /// Issue ID or prefix
         id: String,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
     },
 
     /// Claim an issue to work on
@@ -101,7 +109,11 @@ enum Commands {
     },
 
     /// Show issues ready for work (open and unclaimed)
-    Ready,
+    Ready {
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
 
     /// Update an issue
     Update {
@@ -206,13 +218,13 @@ fn main() {
             issue_type,
             label,
         } => commands::create::run(title, description, priority, issue_type, label),
-        Commands::List { status, issue_type } => commands::list::run(status, issue_type),
-        Commands::Get { id } => commands::get::run(id),
+        Commands::List { status, issue_type, json } => commands::list::run(status, issue_type, json),
+        Commands::Get { id, json } => commands::get::run(id, json),
         Commands::Claim { id, context } => commands::claim::run(id, context),
         Commands::Release { id, reason } => commands::release::run(id, reason),
         Commands::Close { id, reason } => commands::close::run(id, reason),
         Commands::Reopen { id, reason } => commands::reopen::run(id, reason),
-        Commands::Ready => commands::ready::run(),
+        Commands::Ready { json } => commands::ready::run(json),
         Commands::Update {
             id,
             title,

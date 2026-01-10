@@ -5,7 +5,7 @@ use crate::index::IssueIndex;
 use crate::storage;
 use crate::types::{Issue, IssueType, Status};
 
-pub fn run(status: Option<String>, issue_type: Option<String>) -> Result<(), Error> {
+pub fn run(status: Option<String>, issue_type: Option<String>, json: bool) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
     let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
     let index = IssueIndex::load(repo_path)?;
@@ -33,20 +33,24 @@ pub fn run(status: Option<String>, issue_type: Option<String>) -> Result<(), Err
 
     issues.sort_by(|a, b| (a.priority, a.created_at).cmp(&(b.priority, b.created_at)));
 
-    println!(
-        "{:<12} {:<12} {:<8} {:<10} {}",
-        "ID", "STATUS", "PRI", "TYPE", "TITLE"
-    );
-    println!("{}", "-".repeat(60));
-    for issue in issues {
+    if json {
+        println!("{}", serde_json::to_string_pretty(&issues)?);
+    } else {
         println!(
             "{:<12} {:<12} {:<8} {:<10} {}",
-            issue.id,
-            status_str(issue.status),
-            issue.priority.as_str(),
-            issue.issue_type.as_str(),
-            truncate(&issue.title, 40)
+            "ID", "STATUS", "PRI", "TYPE", "TITLE"
         );
+        println!("{}", "-".repeat(60));
+        for issue in issues {
+            println!(
+                "{:<12} {:<12} {:<8} {:<10} {}",
+                issue.id,
+                status_str(issue.status),
+                issue.priority.as_str(),
+                issue.issue_type.as_str(),
+                truncate(&issue.title, 40)
+            );
+        }
     }
     Ok(())
 }
