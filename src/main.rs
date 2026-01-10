@@ -58,6 +58,75 @@ enum Commands {
         /// Issue ID or prefix
         id: String,
     },
+
+    /// Claim an issue to work on
+    Claim {
+        /// Issue ID or prefix
+        id: String,
+
+        /// Context for the claim (e.g., branch name, PR)
+        #[arg(short, long)]
+        context: Option<String>,
+    },
+
+    /// Release a claimed issue back to open
+    Release {
+        /// Issue ID or prefix
+        id: String,
+
+        /// Reason for releasing
+        #[arg(short, long)]
+        reason: Option<String>,
+    },
+
+    /// Close an issue
+    Close {
+        /// Issue ID or prefix
+        id: String,
+
+        /// Reason for closing
+        #[arg(short, long)]
+        reason: Option<String>,
+    },
+
+    /// Reopen a closed issue
+    Reopen {
+        /// Issue ID or prefix
+        id: String,
+
+        /// Reason for reopening
+        #[arg(short, long)]
+        reason: Option<String>,
+    },
+
+    /// Show issues ready for work (open and unclaimed)
+    Ready,
+
+    /// Update an issue
+    Update {
+        /// Issue ID or prefix
+        id: String,
+
+        /// New title
+        #[arg(long)]
+        title: Option<String>,
+
+        /// New description
+        #[arg(short, long)]
+        description: Option<String>,
+
+        /// New priority
+        #[arg(short, long)]
+        priority: Option<String>,
+
+        /// New type
+        #[arg(short = 't', long = "type")]
+        issue_type: Option<String>,
+
+        /// New labels (replaces existing)
+        #[arg(short, long)]
+        label: Option<Vec<String>>,
+    },
 }
 
 fn main() {
@@ -74,6 +143,19 @@ fn main() {
         } => commands::create::run(title, description, priority, issue_type, label),
         Commands::List { status, issue_type } => commands::list::run(status, issue_type),
         Commands::Get { id } => commands::get::run(id),
+        Commands::Claim { id, context } => commands::claim::run(id, context),
+        Commands::Release { id, reason } => commands::release::run(id, reason),
+        Commands::Close { id, reason } => commands::close::run(id, reason),
+        Commands::Reopen { id, reason } => commands::reopen::run(id, reason),
+        Commands::Ready => commands::ready::run(),
+        Commands::Update {
+            id,
+            title,
+            description,
+            priority,
+            issue_type,
+            label,
+        } => commands::update::run(id, title, description, priority, issue_type, label),
     };
 
     if let Err(e) = result {

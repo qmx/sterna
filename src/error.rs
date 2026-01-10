@@ -11,6 +11,11 @@ pub enum Error {
     NotFound(String),
     AmbiguousId(String, Vec<String>),
     NotInitialized,
+    AlreadyClaimed(String),
+    NotClaimed(String),
+    IsClosed(String),
+    AlreadyClosed(String),
+    NotClosed(String),
     InvalidPriority(String),
     InvalidIssueType(String),
 }
@@ -31,6 +36,11 @@ impl fmt::Display for Error {
                 write!(f, "Ambiguous ID '{}': matches {:?}", prefix, matches)
             }
             Error::NotInitialized => write!(f, "Sterna not initialized. Run 'st init' first."),
+            Error::AlreadyClaimed(id) => write!(f, "Issue {} is already claimed", id),
+            Error::NotClaimed(id) => write!(f, "Issue {} is not claimed", id),
+            Error::IsClosed(id) => write!(f, "Issue {} is closed", id),
+            Error::AlreadyClosed(id) => write!(f, "Issue {} is already closed", id),
+            Error::NotClosed(id) => write!(f, "Issue {} is not closed", id),
             Error::InvalidPriority(p) => write!(f, "Invalid priority: {}", p),
             Error::InvalidIssueType(t) => write!(f, "Invalid issue type: {}", t),
         }
