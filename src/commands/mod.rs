@@ -1,6 +1,7 @@
 pub mod claim;
 pub mod close;
 pub mod create;
+pub mod depend;
 pub mod get;
 pub mod init;
 pub mod list;

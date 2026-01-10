@@ -127,6 +127,32 @@ enum Commands {
         #[arg(short, long)]
         label: Option<Vec<String>>,
     },
+
+    /// Create a dependency between issues
+    Depend {
+        /// Source issue ID
+        source: String,
+
+        /// Target issue that source depends on (needs done first)
+        #[arg(long)]
+        needs: Option<String>,
+
+        /// Target issue that source blocks
+        #[arg(long)]
+        blocks: Option<String>,
+
+        /// Target issue that source relates to
+        #[arg(long)]
+        relates_to: Option<String>,
+
+        /// Target issue that is parent of source
+        #[arg(long)]
+        parent: Option<String>,
+
+        /// Target issue that source duplicates
+        #[arg(long)]
+        duplicates: Option<String>,
+    },
 }
 
 fn main() {
@@ -156,6 +182,14 @@ fn main() {
             issue_type,
             label,
         } => commands::update::run(id, title, description, priority, issue_type, label),
+        Commands::Depend {
+            source,
+            needs,
+            blocks,
+            relates_to,
+            parent,
+            duplicates,
+        } => commands::depend::run(source, needs, blocks, relates_to, parent, duplicates),
     };
 
     if let Err(e) = result {

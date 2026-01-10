@@ -19,6 +19,9 @@ pub enum Error {
     InvalidPriority(String),
     InvalidIssueType(String),
     InvalidEdgeType(String),
+    NoEdgeTarget,
+    SelfReference(String),
+    DuplicateEdge(String, String),
 }
 
 impl fmt::Display for Error {
@@ -45,6 +48,9 @@ impl fmt::Display for Error {
             Error::InvalidPriority(p) => write!(f, "Invalid priority: {}", p),
             Error::InvalidIssueType(t) => write!(f, "Invalid issue type: {}", t),
             Error::InvalidEdgeType(t) => write!(f, "Invalid edge type: {}", t),
+            Error::NoEdgeTarget => write!(f, "Must specify one of: --needs, --blocks, --relates-to, --parent, --duplicates"),
+            Error::SelfReference(id) => write!(f, "Cannot create edge to self: {}", id),
+            Error::DuplicateEdge(s, t) => write!(f, "Edge already exists: {} -> {}", s, t),
         }
     }
 }
