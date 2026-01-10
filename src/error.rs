@@ -18,6 +18,7 @@ pub enum Error {
     NotClosed(String),
     InvalidPriority(String),
     InvalidIssueType(String),
+    InvalidEdgeType(String),
 }
 
 impl fmt::Display for Error {
@@ -43,6 +44,7 @@ impl fmt::Display for Error {
             Error::NotClosed(id) => write!(f, "Issue {} is not closed", id),
             Error::InvalidPriority(p) => write!(f, "Invalid priority: {}", p),
             Error::InvalidIssueType(t) => write!(f, "Invalid issue type: {}", t),
+            Error::InvalidEdgeType(t) => write!(f, "Invalid edge type: {}", t),
         }
     }
 }

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(st init:*)",
+      "Bash(st create:*)",
+      "Bash(st ready:*)",
+      "Bash(st claim:*)",
+      "Bash(cargo build:*)",
+      "Bash(st close:*)"
+    ]
+  }
+}
