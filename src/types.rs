@@ -168,3 +168,27 @@ impl EdgeType {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Snapshot {
+    pub schema_version: u32,
+    pub version: u64,
+    pub created_at: i64,
+    pub lamport: u64,
+    pub issue_hashes: Vec<String>,
+    pub edge_hashes: Vec<String>,
+}
+
+impl Snapshot {
+    pub fn from_json(data: &[u8]) -> Result<Self, Error> {
+        let value: serde_json::Value = serde_json::from_slice(data)?;
+        let version = value["schema_version"].as_u64().unwrap_or(0) as u32;
+        if version != SCHEMA_VERSION {
+            return Err(Error::SchemaMismatch {
+                expected: SCHEMA_VERSION,
+                found: version,
+            });
+        }
+        Ok(serde_json::from_value(value)?)
+    }
+}
