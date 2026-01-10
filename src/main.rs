@@ -174,6 +174,18 @@ enum Commands {
         #[arg(long)]
         yes: bool,
     },
+
+    /// Push snapshot to remote
+    Push {
+        /// Remote name (default: origin)
+        remote: Option<String>,
+    },
+
+    /// Pull and merge snapshot from remote
+    Pull {
+        /// Remote name (default: origin)
+        remote: Option<String>,
+    },
 }
 
 fn main() {
@@ -214,6 +226,8 @@ fn main() {
         Commands::Export { output } => commands::export::run(output),
         Commands::Import { file } => commands::import::run(file),
         Commands::Purge { yes } => commands::purge::run(yes),
+        Commands::Push { remote } => commands::push::run(remote),
+        Commands::Pull { remote } => commands::pull::run(remote),
     };
 
     if let Err(e) = result {

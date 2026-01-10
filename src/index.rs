@@ -121,14 +121,6 @@ impl EdgeIndex {
         Ok(())
     }
 
-    pub fn find_by_source(&self, source: &str) -> Vec<&EdgeEntry> {
-        self.entries.iter().filter(|e| e.source == source).collect()
-    }
-
-    pub fn find_by_target(&self, target: &str) -> Vec<&EdgeEntry> {
-        self.entries.iter().filter(|e| e.target == target).collect()
-    }
-
     pub fn exists(&self, source: &str, target: &str, edge_type: EdgeType) -> bool {
         self.entries
             .iter()

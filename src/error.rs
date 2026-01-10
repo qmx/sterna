@@ -23,6 +23,7 @@ pub enum Error {
     SelfReference(String),
     DuplicateEdge(String, String),
     WouldCreateCycle(String, String),
+    InvalidSnapshot,
 }
 
 impl fmt::Display for Error {
@@ -53,6 +54,7 @@ impl fmt::Display for Error {
             Error::SelfReference(id) => write!(f, "Cannot create edge to self: {}", id),
             Error::DuplicateEdge(s, t) => write!(f, "Edge already exists: {} -> {}", s, t),
             Error::WouldCreateCycle(s, t) => write!(f, "Would create cycle: {} -> {}", s, t),
+            Error::InvalidSnapshot => write!(f, "Invalid snapshot format"),
         }
     }
 }
