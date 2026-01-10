@@ -10,7 +10,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nImplement st depend command\n\nAdd command to create edges between issues:\n- st depend <source> --needs <target>   \\(DependsOn\\)\n- st depend <source> --blocks <target>  \\(Blocks\\)\n- st depend <source> --relates-to <target>\n- st depend <source> --parent <target>\n- st depend <source> --duplicates <target>\n\nValidates both issues exist, prevents self-reference and duplicates.\nStores edges as git blobs with index in sterna/index/edges.\n\nCloses: st-d439\nEOF\n\\)\")",
       "Bash(cargo test:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(cargo run:*)"
     ]
   }
 }
