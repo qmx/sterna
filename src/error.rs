@@ -22,6 +22,7 @@ pub enum Error {
     NoEdgeTarget,
     SelfReference(String),
     DuplicateEdge(String, String),
+    WouldCreateCycle(String, String),
 }
 
 impl fmt::Display for Error {
@@ -51,6 +52,7 @@ impl fmt::Display for Error {
             Error::NoEdgeTarget => write!(f, "Must specify one of: --needs, --blocks, --relates-to, --parent, --duplicates"),
             Error::SelfReference(id) => write!(f, "Cannot create edge to self: {}", id),
             Error::DuplicateEdge(s, t) => write!(f, "Edge already exists: {} -> {}", s, t),
+            Error::WouldCreateCycle(s, t) => write!(f, "Would create cycle: {} -> {}", s, t),
         }
     }
 }

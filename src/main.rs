@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 mod commands;
+mod dag;
 mod error;
 mod id;
 mod index;

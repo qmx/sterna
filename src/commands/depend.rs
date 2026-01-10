@@ -1,5 +1,6 @@
 use git2::Repository;
 
+use crate::dag;
 use crate::error::Error;
 use crate::index::{EdgeIndex, IssueIndex};
 use crate::storage;
@@ -48,6 +49,11 @@ pub fn run(
     // Check for duplicate edge
     if edge_index.exists(&source_id, &target_id, edge_type) {
         return Err(Error::DuplicateEdge(source_id, target_id));
+    }
+
+    // Check for cycles
+    if dag::would_create_cycle(&edge_index, &source_id, &target_id, edge_type) {
+        return Err(Error::WouldCreateCycle(source_id, target_id));
     }
 
     // Create edge
