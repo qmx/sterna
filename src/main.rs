@@ -154,6 +154,13 @@ enum Commands {
         #[arg(long)]
         duplicates: Option<String>,
     },
+
+    /// Export all issues and edges to JSON
+    Export {
+        /// Output file (default: stdout)
+        #[arg(short, long)]
+        output: Option<String>,
+    },
 }
 
 fn main() {
@@ -191,6 +198,7 @@ fn main() {
             parent,
             duplicates,
         } => commands::depend::run(source, needs, blocks, relates_to, parent, duplicates),
+        Commands::Export { output } => commands::export::run(output),
     };
 
     if let Err(e) = result {
