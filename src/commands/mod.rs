@@ -7,6 +7,8 @@ pub mod get;
 pub mod import;
 pub mod init;
 pub mod list;
+pub mod onboard;
+pub mod prime;
 pub mod pull;
 pub mod purge;
 pub mod push;

@@ -186,6 +186,12 @@ enum Commands {
         /// Remote name (default: origin)
         remote: Option<String>,
     },
+
+    /// Show onboarding info for agents
+    Onboard,
+
+    /// Show full command reference
+    Prime,
 }
 
 fn main() {
@@ -228,6 +234,8 @@ fn main() {
         Commands::Purge { yes } => commands::purge::run(yes),
         Commands::Push { remote } => commands::push::run(remote),
         Commands::Pull { remote } => commands::pull::run(remote),
+        Commands::Onboard => commands::onboard::run(),
+        Commands::Prime => commands::prime::run(),
     };
 
     if let Err(e) = result {
