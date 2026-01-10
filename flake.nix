@@ -18,13 +18,25 @@
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
           extensions = [ "rust-src" "rust-analyzer" ];
         };
+
+        sterna = pkgs.rustPlatform.buildRustPackage {
+          pname = "sterna";
+          version = "0.1.0";
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          buildInputs = [ pkgs.openssl ];
+        };
       in
       {
+        packages.default = sterna;
+
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
+          buildInputs = [
             rustToolchain
-            pkg-config
-            openssl
+            pkgs.pkg-config
+            pkgs.openssl
+            sterna
           ];
         };
       }
