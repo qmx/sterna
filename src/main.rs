@@ -161,6 +161,12 @@ enum Commands {
         #[arg(short, long)]
         output: Option<String>,
     },
+
+    /// Import issues and edges from JSON
+    Import {
+        /// Input file
+        file: String,
+    },
 }
 
 fn main() {
@@ -199,6 +205,7 @@ fn main() {
             duplicates,
         } => commands::depend::run(source, needs, blocks, relates_to, parent, duplicates),
         Commands::Export { output } => commands::export::run(output),
+        Commands::Import { file } => commands::import::run(file),
     };
 
     if let Err(e) = result {
