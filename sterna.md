@@ -455,11 +455,12 @@ If two agents claim the same issue, higher Lamport wins. Loser receives an error
 
 | Command | Description |
 |---------|-------------|
-| `st depend <id> --needs <other-id>` | A needs B (A depends_on B) |
-| `st depend <id> --blocks <other-id>` | A blocks B (B depends_on A) |
-| `st depend <id> --relates-to <other-id>` | Add relates_to edge |
-| `st depend <id> --parent <other-id>` | Add parent_child edge |
-| `st depend <id> --duplicates <other-id>` | Add duplicates edge |
+| `st dep add <id> --needs <other-id>` | A needs B (A depends_on B) |
+| `st dep add <id> --blocks <other-id>` | A blocks B (B depends_on A) |
+| `st dep add <id> --relates-to <other-id>` | Add relates_to edge |
+| `st dep add <id> --parent <other-id>` | Add parent_child edge |
+| `st dep add <id> --duplicates <other-id>` | Add duplicates edge |
+| `st dep remove <id> --needs <other-id>` | Remove a dependency |
 | `st ready` | Show unblocked, unclaimed issues |
 
 ### Sync

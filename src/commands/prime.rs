@@ -33,11 +33,12 @@ At session end:
 - st reopen <id>       Reopen a closed issue
 
 ## Dependencies
-- st depend <src> --needs <tgt>    Source needs target done first
-- st depend <src> --blocks <tgt>   Source blocks target
-- st depend <src> --relates-to <tgt>
-- st depend <src> --parent <tgt>
-- st depend <src> --duplicates <tgt>
+- st dep add <src> --needs <tgt>      Source needs target done first
+- st dep add <src> --blocks <tgt>     Source blocks target
+- st dep add <src> --relates-to <tgt>
+- st dep add <src> --parent <tgt>
+- st dep add <src> --duplicates <tgt>
+- st dep remove <src> --needs <tgt>   Remove a dependency
 
 ## Data Management
 - st export            Export all data to JSON
@@ -47,6 +48,7 @@ At session end:
 ## Sync
 - st push [remote]     Push snapshot to remote
 - st pull [remote]     Pull and merge from remote
+- st sync [remote]     Pull then push
 
 ## Agent Commands
 - st onboard           Show onboarding info
