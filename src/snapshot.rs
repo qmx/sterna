@@ -1,11 +1,32 @@
 use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
 
+use fs2::FileExt;
 use git2::{Commit, Repository, Tree};
 
 use crate::error::Error;
 use crate::types::{Edge, EdgeType, Issue};
 
 const SNAPSHOT_REF: &str = "refs/sterna/snapshot";
+
+/// Advisory lock for snapshot operations
+pub struct SnapshotLock {
+    _file: File,
+}
+
+impl SnapshotLock {
+    pub fn acquire(repo: &Repository) -> Result<Self, Error> {
+        let lock_path = repo.path().join("sterna.lock");
+        let file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&lock_path)
+            .map_err(|e| Error::LockFailed(e.to_string()))?;
+        file.lock_exclusive()
+            .map_err(|e| Error::LockFailed(e.to_string()))?;
+        Ok(Self { _file: file })
+    }
+}
 
 /// Check if Sterna is initialized in this repo
 pub fn is_initialized(repo: &Repository) -> bool {
@@ -160,6 +181,7 @@ pub fn save_issue(repo: &Repository, issue: &Issue, message: &str) -> Result<(),
     if !is_initialized(repo) {
         return Err(Error::NotInitialized);
     }
+    let _lock = SnapshotLock::acquire(repo)?;
 
     let current_commit = get_snapshot_commit(repo)?;
     let current_tree = current_commit.tree()?;
@@ -198,6 +220,7 @@ pub fn save_edge(repo: &Repository, edge: &Edge, message: &str) -> Result<(), Er
     if !is_initialized(repo) {
         return Err(Error::NotInitialized);
     }
+    let _lock = SnapshotLock::acquire(repo)?;
 
     let current_commit = get_snapshot_commit(repo)?;
     let current_tree = current_commit.tree()?;

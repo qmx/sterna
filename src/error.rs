@@ -24,6 +24,7 @@ pub enum Error {
     DuplicateEdge(String, String),
     WouldCreateCycle(String, String),
     InvalidSnapshot,
+    LockFailed(String),
 }
 
 impl fmt::Display for Error {
@@ -55,6 +56,7 @@ impl fmt::Display for Error {
             Error::DuplicateEdge(s, t) => write!(f, "Edge already exists: {} -> {}", s, t),
             Error::WouldCreateCycle(s, t) => write!(f, "Would create cycle: {} -> {}", s, t),
             Error::InvalidSnapshot => write!(f, "Invalid snapshot format"),
+            Error::LockFailed(msg) => write!(f, "Failed to acquire lock: {}", msg),
         }
     }
 }
