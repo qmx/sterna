@@ -26,8 +26,8 @@ pub fn run(id_prefix: String, context: Option<String>) -> Result<(), Error> {
     issue.updated_at = chrono::Utc::now().timestamp();
     issue.editor = storage::get_editor()?;
 
-    snapshot::save_issue(&repo, &issue, &format!("Claim issue {}", id))?;
+    snapshot::save_issue(&repo, &issue, &format!("Claim issue {id}"))?;
 
-    println!("Claimed {}", id);
+    println!("Claimed {id}");
     Ok(())
 }

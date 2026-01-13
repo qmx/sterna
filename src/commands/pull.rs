@@ -89,8 +89,7 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
     repo.find_reference("refs/sterna/remote")?.delete()?;
 
     eprintln!(
-        "Pulled from {}: {} issues added, {} issues updated, {} edges added",
-        remote_name, issues_added, issues_updated, edges_added
+        "Pulled from {remote_name}: {issues_added} issues added, {issues_updated} issues updated, {edges_added} edges added"
     );
 
     Ok(())

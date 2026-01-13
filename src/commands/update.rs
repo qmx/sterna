@@ -38,8 +38,8 @@ pub fn run(
     issue.updated_at = chrono::Utc::now().timestamp();
     issue.editor = storage::get_editor()?;
 
-    snapshot::save_issue(&repo, &issue, &format!("Update issue {}", id))?;
+    snapshot::save_issue(&repo, &issue, &format!("Update issue {id}"))?;
 
-    println!("Updated {}", id);
+    println!("Updated {id}");
     Ok(())
 }

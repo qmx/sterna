@@ -30,36 +30,36 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::Git(e) => write!(f, "Git error: {}", e),
-            Error::Io(e) => write!(f, "IO error: {}", e),
-            Error::Json(e) => write!(f, "JSON error: {}", e),
+            Error::Git(e) => write!(f, "Git error: {e}"),
+            Error::Io(e) => write!(f, "IO error: {e}"),
+            Error::Json(e) => write!(f, "JSON error: {e}"),
             Error::SchemaMismatch { expected, found } => {
-                write!(f, "Schema mismatch: expected {}, found {}", expected, found)
+                write!(f, "Schema mismatch: expected {expected}, found {found}")
             }
-            Error::NoIdentity(msg) => write!(f, "No identity: {}", msg),
-            Error::NotFound(id) => write!(f, "Issue not found: {}", id),
+            Error::NoIdentity(msg) => write!(f, "No identity: {msg}"),
+            Error::NotFound(id) => write!(f, "Issue not found: {id}"),
             Error::AmbiguousId(prefix, matches) => {
-                write!(f, "Ambiguous ID '{}': matches {:?}", prefix, matches)
+                write!(f, "Ambiguous ID '{prefix}': matches {matches:?}")
             }
             Error::NotInitialized => write!(f, "Sterna not initialized. Run 'st init' first."),
             Error::AlreadyInitialized => write!(f, "Sterna is already initialized"),
-            Error::CorruptedSnapshot(msg) => write!(f, "Corrupted snapshot: {}", msg),
-            Error::AlreadyClaimed(id) => write!(f, "Issue {} is already claimed", id),
-            Error::NotClaimed(id) => write!(f, "Issue {} is not claimed", id),
-            Error::IsClosed(id) => write!(f, "Issue {} is closed", id),
-            Error::AlreadyClosed(id) => write!(f, "Issue {} is already closed", id),
-            Error::NotClosed(id) => write!(f, "Issue {} is not closed", id),
-            Error::InvalidPriority(p) => write!(f, "Invalid priority: {}", p),
-            Error::InvalidIssueType(t) => write!(f, "Invalid issue type: {}", t),
+            Error::CorruptedSnapshot(msg) => write!(f, "Corrupted snapshot: {msg}"),
+            Error::AlreadyClaimed(id) => write!(f, "Issue {id} is already claimed"),
+            Error::NotClaimed(id) => write!(f, "Issue {id} is not claimed"),
+            Error::IsClosed(id) => write!(f, "Issue {id} is closed"),
+            Error::AlreadyClosed(id) => write!(f, "Issue {id} is already closed"),
+            Error::NotClosed(id) => write!(f, "Issue {id} is not closed"),
+            Error::InvalidPriority(p) => write!(f, "Invalid priority: {p}"),
+            Error::InvalidIssueType(t) => write!(f, "Invalid issue type: {t}"),
             Error::NoEdgeTarget => write!(
                 f,
                 "Must specify one of: --needs, --blocks, --relates-to, --parent, --duplicates"
             ),
-            Error::SelfReference(id) => write!(f, "Cannot create edge to self: {}", id),
-            Error::DuplicateEdge(s, t) => write!(f, "Edge already exists: {} -> {}", s, t),
-            Error::WouldCreateCycle(s, t) => write!(f, "Would create cycle: {} -> {}", s, t),
+            Error::SelfReference(id) => write!(f, "Cannot create edge to self: {id}"),
+            Error::DuplicateEdge(s, t) => write!(f, "Edge already exists: {s} -> {t}"),
+            Error::WouldCreateCycle(s, t) => write!(f, "Would create cycle: {s} -> {t}"),
             Error::InvalidSnapshot => write!(f, "Invalid snapshot format"),
-            Error::LockFailed(msg) => write!(f, "Failed to acquire lock: {}", msg),
+            Error::LockFailed(msg) => write!(f, "Failed to acquire lock: {msg}"),
         }
     }
 }

@@ -33,10 +33,10 @@ pub fn run(output: Option<String>) -> Result<(), Error> {
     match output {
         Some(path) => {
             fs::write(&path, &json)?;
-            eprintln!("Exported to {}", path);
+            eprintln!("Exported to {path}");
         }
         None => {
-            println!("{}", json);
+            println!("{json}");
         }
     }
 

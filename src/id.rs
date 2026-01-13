@@ -11,7 +11,7 @@ pub fn generate_id(
     let mut length = 4;
 
     loop {
-        let input = format!("{}{}{}{}{}", title, description, editor, timestamp, length);
+        let input = format!("{title}{description}{editor}{timestamp}{length}");
         let hash = Sha1::digest(input.as_bytes());
         let hex = hex::encode(hash);
         let id = format!("st-{}", &hex[..length]);

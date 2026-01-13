@@ -32,10 +32,10 @@ fn print_issue(issue: &Issue) {
     println!("Editor:      {}", issue.editor);
     println!("Claimed:     {}", issue.claimed);
     if let Some(ref ctx) = issue.claim_context {
-        println!("Context:     {}", ctx);
+        println!("Context:     {ctx}");
     }
     if let Some(ref reason) = issue.reason {
-        println!("Reason:      {}", reason);
+        println!("Reason:      {reason}");
     }
     if !issue.description.is_empty() {
         println!("\n{}", issue.description);

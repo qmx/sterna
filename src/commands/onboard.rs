@@ -54,7 +54,7 @@ Run `st prime` for lean workflow context (injected automatically via hooks).
 
 pub fn run(export: bool) -> Result<(), Error> {
     if export {
-        print!("{}", DEFAULT_ONBOARD);
+        print!("{DEFAULT_ONBOARD}");
         return Ok(());
     }
 
@@ -62,9 +62,9 @@ pub fn run(export: bool) -> Result<(), Error> {
 
     if config_path.exists() {
         let content = fs::read_to_string(&config_path)?;
-        print!("{}", content);
+        print!("{content}");
     } else {
-        print!("{}", DEFAULT_ONBOARD);
+        print!("{DEFAULT_ONBOARD}");
     }
 
     Ok(())

@@ -64,8 +64,8 @@ pub fn run(file: String) -> Result<(), Error> {
         if !matches!(
             imported_edge.edge_type,
             EdgeType::RelatesTo | EdgeType::Duplicates
-        ) {
-            if dag::would_create_cycle(
+        )
+            && dag::would_create_cycle(
                 &current_edges,
                 &imported_edge.source,
                 &imported_edge.target,
@@ -80,7 +80,6 @@ pub fn run(file: String) -> Result<(), Error> {
                 edges_skipped += 1;
                 continue;
             }
-        }
 
         current_edges.push(imported_edge.clone());
         edges_to_add.push(imported_edge);
@@ -114,7 +113,7 @@ pub fn run(file: String) -> Result<(), Error> {
         issues_updated,
         edges_added,
         if edges_skipped > 0 {
-            format!(" ({} edges skipped due to cycles)", edges_skipped)
+            format!(" ({edges_skipped} edges skipped due to cycles)")
         } else {
             String::new()
         }

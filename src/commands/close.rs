@@ -24,8 +24,8 @@ pub fn run(id_prefix: String, reason: Option<String>) -> Result<(), Error> {
     issue.updated_at = chrono::Utc::now().timestamp();
     issue.editor = storage::get_editor()?;
 
-    snapshot::save_issue(&repo, &issue, &format!("Close issue {}", id))?;
+    snapshot::save_issue(&repo, &issue, &format!("Close issue {id}"))?;
 
-    println!("Closed {}", id);
+    println!("Closed {id}");
     Ok(())
 }

@@ -35,8 +35,8 @@ pub fn run(status: Option<String>, issue_type: Option<String>, json: bool) -> Re
         println!("{}", serde_json::to_string_pretty(&issues)?);
     } else {
         println!(
-            "{:<12} {:<12} {:<8} {:<10} {}",
-            "ID", "STATUS", "PRI", "TYPE", "TITLE"
+            "{:<12} {:<12} {:<8} {:<10} TITLE",
+            "ID", "STATUS", "PRI", "TYPE"
         );
         println!("{}", "-".repeat(60));
         for issue in issues {
@@ -58,7 +58,7 @@ fn parse_status(s: &str) -> Result<Status, Error> {
         "open" => Ok(Status::Open),
         "in_progress" | "inprogress" | "in-progress" => Ok(Status::InProgress),
         "closed" => Ok(Status::Closed),
-        _ => Err(Error::InvalidPriority(format!("Unknown status: {}", s))),
+        _ => Err(Error::InvalidPriority(format!("Unknown status: {s}"))),
     }
 }
 

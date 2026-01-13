@@ -55,8 +55,8 @@ pub fn run(
         reason: None,
     };
 
-    snapshot::save_issue(&repo, &issue, &format!("Create issue {}", id))?;
+    snapshot::save_issue(&repo, &issue, &format!("Create issue {id}"))?;
 
-    println!("{}", id);
+    println!("{id}");
     Ok(())
 }

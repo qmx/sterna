@@ -19,6 +19,7 @@ impl SnapshotLock {
         let lock_path = repo.path().join("sterna.lock");
         let file = OpenOptions::new()
             .create(true)
+            .truncate(false)
             .write(true)
             .open(&lock_path)
             .map_err(|e| Error::LockFailed(e.to_string()))?;
@@ -50,10 +51,10 @@ fn get_snapshot_tree(repo: &Repository) -> Result<Tree, Error> {
 fn get_subtree<'a>(repo: &'a Repository, tree: &Tree, name: &str) -> Result<Tree<'a>, Error> {
     let entry = tree
         .get_name(name)
-        .ok_or_else(|| Error::CorruptedSnapshot(format!("missing {} subtree", name)))?;
+        .ok_or_else(|| Error::CorruptedSnapshot(format!("missing {name} subtree")))?;
     let obj = entry.to_object(repo)?;
     obj.peel_to_tree()
-        .map_err(|e| Error::CorruptedSnapshot(format!("{} is not a tree: {}", name, e)))
+        .map_err(|e| Error::CorruptedSnapshot(format!("{name} is not a tree: {e}")))
 }
 
 /// Initialize Sterna - creates empty snapshot with issues/ and edges/ subtrees

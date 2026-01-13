@@ -15,11 +15,10 @@ pub fn run(json: bool) -> Result<(), Error> {
     let mut ready_issues: Vec<Issue> = Vec::new();
     for issue in all_issues.values() {
         // Ready = open AND not claimed AND not blocked
-        if issue.status == Status::Open && !issue.claimed {
-            if !is_blocked(&issue.id, &edges, &all_issues) {
+        if issue.status == Status::Open && !issue.claimed
+            && !is_blocked(&issue.id, &edges, &all_issues) {
                 ready_issues.push(issue.clone());
             }
-        }
     }
 
     ready_issues.sort_by_key(|i| i.priority);
@@ -27,7 +26,7 @@ pub fn run(json: bool) -> Result<(), Error> {
     if json {
         println!("{}", serde_json::to_string_pretty(&ready_issues)?);
     } else {
-        println!("{:<12} {:<8} {:<10} {}", "ID", "PRI", "TYPE", "TITLE");
+        println!("{:<12} {:<8} {:<10} TITLE", "ID", "PRI", "TYPE");
         println!("{}", "-".repeat(50));
         for issue in ready_issues {
             println!(

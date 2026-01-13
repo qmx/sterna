@@ -40,7 +40,7 @@ Before saying "done":
 
 pub fn run(export: bool) -> Result<(), Error> {
     if export {
-        print!("{}", DEFAULT_PRIME);
+        print!("{DEFAULT_PRIME}");
         return Ok(());
     }
 
@@ -48,9 +48,9 @@ pub fn run(export: bool) -> Result<(), Error> {
 
     if config_path.exists() {
         let content = fs::read_to_string(&config_path)?;
-        print!("{}", content);
+        print!("{content}");
     } else {
-        print!("{}", DEFAULT_PRIME);
+        print!("{DEFAULT_PRIME}");
     }
 
     // Always show ready issues
