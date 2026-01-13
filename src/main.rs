@@ -9,7 +9,7 @@ mod storage;
 mod types;
 
 #[derive(Parser)]
-#[command(name = "st")]
+#[command(name = "st", version = env!("VERGEN_GIT_DESCRIBE"))]
 #[command(about = "Sterna - Git-native issue tracker")]
 struct Cli {
     #[command(subcommand)]
