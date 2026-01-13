@@ -3,14 +3,27 @@ use std::path::PathBuf;
 
 use crate::error::Error;
 
-const DEFAULT_ONBOARD: &str = r#"Sterna: Git-native issue tracker. Key commands:
-- st ready     : show available work
-- st claim <id>: take an issue
-- st close <id>: finish an issue
-- st prime     : full reference
+const DEFAULT_ONBOARD: &str = r#"Sterna: Git-native issue tracker.
+
+## Workflow
+1. `st ready` - find available work
+2. `st claim <id>` - take ownership
+3. Work on the issue
+4. `st close <id>` - mark complete
+
+## Session Protocol
+- Run `st ready` at session start
+- Claim before starting work
+- Close issues when done (include "Closes: <id>" in commits)
+- Run `st prime` for full reference
 "#;
 
-pub fn run() -> Result<(), Error> {
+pub fn run(export: bool) -> Result<(), Error> {
+    if export {
+        print!("{}", DEFAULT_ONBOARD);
+        return Ok(());
+    }
+
     let config_path = get_config_path()?;
 
     if config_path.exists() {

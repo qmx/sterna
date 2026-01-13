@@ -200,10 +200,18 @@ enum Commands {
     },
 
     /// Show onboarding info for agents
-    Onboard,
+    Onboard {
+        /// Export default content to stdout (for customization)
+        #[arg(long)]
+        export: bool,
+    },
 
     /// Show full command reference
-    Prime,
+    Prime {
+        /// Export default content to stdout (for customization)
+        #[arg(long)]
+        export: bool,
+    },
 }
 
 fn main() {
@@ -246,8 +254,8 @@ fn main() {
         Commands::Purge { yes } => commands::purge::run(yes),
         Commands::Push { remote } => commands::push::run(remote),
         Commands::Pull { remote } => commands::pull::run(remote),
-        Commands::Onboard => commands::onboard::run(),
-        Commands::Prime => commands::prime::run(),
+        Commands::Onboard { export } => commands::onboard::run(export),
+        Commands::Prime { export } => commands::prime::run(export),
     };
 
     if let Err(e) = result {

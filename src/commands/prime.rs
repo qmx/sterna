@@ -6,6 +6,18 @@ use crate::error::Error;
 
 const DEFAULT_PRIME: &str = r#"# Sterna Command Reference
 
+## Quick Start Workflow
+1. Find work: `st ready`
+2. Claim it: `st claim <id>`
+3. Do the work
+4. Close it: `st close <id>` (or commit with "Closes: <id>")
+
+## Session Checklist
+At session end:
+- [ ] All work committed
+- [ ] Claimed issues either closed or released
+- [ ] New discovered work captured via `st create`
+
 ## Core Commands
 - st init              Initialize Sterna in repository
 - st create <title>    Create new issue
@@ -43,7 +55,12 @@ const DEFAULT_PRIME: &str = r#"# Sterna Command Reference
 ---
 "#;
 
-pub fn run() -> Result<(), Error> {
+pub fn run(export: bool) -> Result<(), Error> {
+    if export {
+        print!("{}", DEFAULT_PRIME);
+        return Ok(());
+    }
+
     let config_path = get_config_path()?;
 
     if config_path.exists() {

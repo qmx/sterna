@@ -383,12 +383,14 @@ Manually add hooks to `~/.claude/settings.json`:
 
 | Command | Purpose | Output |
 |---------|---------|---------|
-| `st onboard` | Brief tool introduction | ~100-200 tokens |
+| `st onboard` | Brief tool introduction | ~200-300 tokens |
+| `st onboard --export` | Export default onboard content | ~200-300 tokens |
 | `st prime` | Full workflow + current state | ~1-2k tokens |
+| `st prime --export` | Export default prime content | ~500 tokens |
 
-**`st onboard`** - Brief intro: What is Sterna, key commands, reference to `st prime`
+**`st onboard`** - Workflow-oriented intro: numbered workflow steps, session protocol, reference to `st prime`
 
-**`st prime`** - Full reference: Complete command list, session close protocol, step-by-step workflow, current ready work
+**`st prime`** - Full reference: Quick start workflow, session checklist, complete command list, current ready work
 
 ### Configuration
 
@@ -400,6 +402,12 @@ Users can customize command output by creating override files:
 | `~/.config/sterna/prime.md` | Override `st prime` output |
 
 If these files exist, their content replaces default output entirely.
+
+To export defaults for customization:
+```bash
+st onboard --export > ~/.config/sterna/onboard.md
+st prime --export > ~/.config/sterna/prime.md
+```
 
 ### Directory Layout
 
@@ -442,8 +450,8 @@ If two agents claim the same issue, higher Lamport wins. Loser receives an error
 | Command | Description |
 |---------|-------------|
 | `st init` | Initialize Sterna (create empty state) |
-| `st onboard` | Output brief tool introduction for agents |
-| `st prime` | Output full workflow reference + current ready work |
+| `st onboard [--export]` | Output workflow steps and session protocol |
+| `st prime [--export]` | Output full workflow reference + current ready work |
 | `st purge` | Export, confirm, then remove all traces |
 
 ### Issue Operations
