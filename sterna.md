@@ -119,20 +119,6 @@ pub enum EdgeType {
 | `relates_to` | A is related to B | No | No (bidirectional) |
 | `duplicates` | A duplicates B | No | Yes |
 
-### Snapshot
-
-```rust
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Snapshot {
-    pub schema_version: u32,
-    pub version: u64,
-    pub created_at: i64,
-    pub lamport: u64,
-    pub issue_hashes: Vec<String>,
-    pub edge_hashes: Vec<String>,
-}
-```
-
 ## Schema Versioning
 
 All JSON payloads include `schema_version: u32`. Current version: **1**
@@ -157,32 +143,23 @@ Issue history is preserved in Git, not in the issue payload itself. Each snapsho
 
 ```
 .git/
-  ├── objects/                          # Standard Git object store
-  │   └── ab/cdef123...                 # Issues/edges stored as Git blobs
+  ├── objects/           # Standard Git object store
+  │   └── ab/cdef123...  # Issues/edges stored as Git blobs
   └── refs/
       └── sterna/
-          └── snapshot                   # Ref to snapshot commit (protects objects from GC)
-
-sterna/
-  └── index/                            # Local source of truth for operations
-      ├── issues                         # "<id> <object-hash>"
-      └── edges                          # "<source> <target> <type> <object-hash>"
+          └── snapshot   # THE source of truth
+              → commit
+                  → tree
+                      ├── issues/
+                      │   ├── st-a3f8  → blob (issue JSON)
+                      │   └── st-b4f9  → blob (issue JSON)
+                      └── edges/
+                          └── st-a3f8_st-b4f9_depends_on → blob (edge JSON)
 ```
 
-Objects are stored as proper Git blobs via `git2`. The snapshot commit/tree structure keeps them reachable, preventing garbage collection.
+**Truly git-native:** No working directory files. Everything is in `.git/`. The snapshot tree IS the index - issue lookup reads from `issues/` subtree, edge lookup from `edges/` subtree.
 
-### Index Files
-
-**`sterna/index/issues`:**
-```
-st-a3f8e9 abcdef1234567890...
-st-b4f9f0 cdef4567890abcde...
-```
-
-**`sterna/index/edges`:**
-```
-st-a3f8e9 st-b4f9f0 depends_on cdef4567890abcde...
-```
+Each operation creates a new snapshot commit, providing full history of all state changes.
 
 ### Object Format
 
@@ -310,30 +287,32 @@ fn detect_cycle(edges: &[Edge], edge_type: &str) -> Result<(), String> {
 
 ### Local State
 
+All state lives in `refs/sterna/snapshot`:
+
 ```
 refs/sterna/snapshot → commit → tree
-                               ├── snapshot.json
                                ├── issues/
+                               │   └── <id> → blob
                                └── edges/
+                                   └── <src>_<tgt>_<type> → blob
 ```
 
 ### Pull (`st pull`)
 
-1. Fetch remote snapshot and objects
-2. Merge local and remote issues (LWW)
-3. Merge local and remote edges (union, resolve conflicts)
-4. Create new snapshot with merged objects
-5. Update `refs/sterna/snapshot`
+1. Fetch remote: `refs/sterna/snapshot → refs/sterna/remote`
+2. Walk remote tree, merge issues (LWW by Lamport)
+3. Merge edges (union - skip duplicates)
+4. Each merge creates a new snapshot commit
+5. Clean up temporary remote ref
 
 ### Push (`st push`)
 
-1. Pack all local objects
-2. Transfer to remote via Git protocol
-3. Remote imports objects and updates its ref
+Simply push the ref:
+```
+git push origin refs/sterna/snapshot:refs/sterna/snapshot
+```
 
-### Ref Protection
-
-Fetch remote objects before push to avoid data loss.
+Since all state is in the snapshot commit tree, pushing the ref transfers everything.
 
 ## Agent Integration
 
@@ -545,49 +524,43 @@ If two agents claim the same issue, higher Lamport wins. Loser receives an error
 sterna/
 ├── Cargo.toml
 ├── src/
-│   ├── main.rs
-│   ├── commands/
-│   │   ├── mod.rs
-│   │   ├── onboard.rs
-│   │   ├── prime.rs
-│   │   ├── create.rs
-│   │   ├── get.rs
-│   │   ├── list.rs
-│   │   ├── update.rs
-│   │   ├── claim.rs
-│   │   ├── release.rs
-│   │   ├── close.rs
-│   │   ├── reopen.rs
-│   │   ├── depend.rs
-│   │   ├── ready.rs
-│   │   ├── pull.rs
-│   │   ├── push.rs
-│   │   ├── sync.rs
-│   │   ├── export.rs
-│   │   ├── import.rs
-│   │   ├── init.rs
-│   │   └── purge.rs
-│   ├── storage/
-│   │   ├── mod.rs
-│   │   ├── object.rs
-│   │   ├── index.rs
-│   │   └── snapshot.rs
-│   ├── crdt/
-│   │   └── mod.rs
-│   └── dag/
-│       └── mod.rs
-└── sterna/
-    └── index/
-        ├── issues
-        └── edges
+│   ├── main.rs         # CLI entry, clap setup
+│   ├── types.rs        # Issue, Edge, enums
+│   ├── error.rs        # Error types
+│   ├── storage.rs      # get_editor()
+│   ├── snapshot.rs     # Git-native tree-based storage
+│   ├── id.rs           # ID generation
+│   ├── dag.rs          # Cycle detection
+│   └── commands/
+│       ├── mod.rs
+│       ├── init.rs
+│       ├── create.rs
+│       ├── get.rs
+│       ├── list.rs
+│       ├── update.rs
+│       ├── claim.rs
+│       ├── release.rs
+│       ├── close.rs
+│       ├── reopen.rs
+│       ├── depend.rs
+│       ├── ready.rs
+│       ├── pull.rs
+│       ├── push.rs
+│       ├── export.rs
+│       ├── import.rs
+│       ├── purge.rs
+│       ├── onboard.rs
+│       └── prime.rs
 ```
+
+**No working directory files.** All state in `.git/refs/sterna/snapshot`.
 
 ## Tradeoffs
 
 | Decision | Rationale |
 |----------|-----------|
-| Git blobs + snapshot ref | GC-safe, invisible to Git history, portable |
-| Index as local source of truth | Fast local operations, snapshot for sync |
+| Snapshot tree as source of truth | No working dir files, truly git-native, portable via clone |
+| Each operation = new commit | Full history, atomic operations, git log works |
 | No SQLite | Simplicity, no daemon |
 | LWW CRDT | Simple conflict resolution |
 | No agent registration | Identity from Git config |

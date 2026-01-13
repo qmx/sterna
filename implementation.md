@@ -78,7 +78,7 @@ sterna/
     ├── main.rs
     ├── types.rs
     ├── storage.rs
-    ├── index.rs
+    ├── snapshot.rs   # Git-native tree-based storage
     ├── id.rs
     └── commands/
         ├── mod.rs
@@ -208,48 +208,42 @@ pub fn serialize_issue(issue: &Issue) -> Result<Vec<u8>, Error> {
 }
 ```
 
-### 1.4 Index Management (`src/index.rs`)
+### 1.4 Snapshot Storage (`src/snapshot.rs`)
 
-**Index file format** (`sterna/index/issues`):
+All state lives in `refs/sterna/snapshot` as a git tree:
+
 ```
-st-a3f8 abcdef1234567890abcdef1234567890abcdef12
-st-b4f9 1234567890abcdef1234567890abcdef12345678
+refs/sterna/snapshot → commit → tree
+                               ├── issues/
+                               │   └── <id> → blob (issue JSON)
+                               └── edges/
+                                   └── <src>_<tgt>_<type> → blob (edge JSON)
 ```
 
-**Parse index:**
+**Core functions:**
 ```rust
-pub struct IssueIndex {
-    entries: HashMap<String, git2::Oid>,
+pub fn init(repo: &Repository) -> Result<(), Error> {
+    // Create empty tree with issues/ and edges/ subtrees
+    // Create initial commit at refs/sterna/snapshot
 }
 
-impl IssueIndex {
-    pub fn load(repo_path: &Path) -> Result<Self, Error> {
-        let path = repo_path.join("sterna/index/issues");
-        let mut entries = HashMap::new();
-        if path.exists() {
-            for line in fs::read_to_string(&path)?.lines() {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() == 2 {
-                    entries.insert(parts[0].to_string(), git2::Oid::from_str(parts[1])?);
-                }
-            }
-        }
-        Ok(Self { entries })
-    }
-
-    pub fn save(&self, repo_path: &Path) -> Result<(), Error> {
-        let path = repo_path.join("sterna/index/issues");
-        let tmp = path.with_extension("tmp");
-        let content: String = self.entries.iter()
-            .map(|(id, oid)| format!("{} {}", id, oid))
-            .collect::<Vec<_>>()
-            .join("\n");
-        fs::write(&tmp, content)?;
-        fs::rename(tmp, path)?;  // Atomic update
-        Ok(())
-    }
+pub fn load_issues(repo: &Repository) -> Result<HashMap<String, Issue>, Error> {
+    // Read issues/ subtree, parse each blob
 }
+
+pub fn save_issue(repo: &Repository, issue: &Issue, message: &str) -> Result<(), Error> {
+    // 1. Get current tree
+    // 2. Write issue blob
+    // 3. Build new issues/ subtree with updated entry
+    // 4. Build new root tree
+    // 5. Create commit with parent
+}
+
+pub fn load_edges(repo: &Repository) -> Result<Vec<Edge>, Error>
+pub fn save_edge(repo: &Repository, edge: &Edge, message: &str) -> Result<(), Error>
 ```
+
+**No working directory files.** Everything is in `.git/`.
 
 ### 1.5 ID Generation (`src/id.rs`)
 
@@ -280,21 +274,15 @@ pub fn generate_id(title: &str, description: &str, editor: &str, existing_ids: &
 ### 1.6 `st init` Command
 
 ```rust
-pub fn init() -> Result<(), Error> {
-    let repo = git2::Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
-
-    let index_dir = repo_path.join("sterna/index");
-    fs::create_dir_all(&index_dir)?;
-
-    // Create empty index files
-    fs::write(index_dir.join("issues"), "")?;
-    fs::write(index_dir.join("edges"), "")?;
-
-    println!("Initialized Sterna in {}", repo_path.display());
+pub fn run() -> Result<(), Error> {
+    let repo = Repository::discover(".")?;
+    snapshot::init(&repo)?;
+    println!("Initialized Sterna");
     Ok(())
 }
 ```
+
+The `snapshot::init` function creates an empty snapshot with `issues/` and `edges/` subtrees as the initial commit at `refs/sterna/snapshot`.
 
 ### 1.7 `st create` Command
 
@@ -791,43 +779,34 @@ struct Export {
 
 ### 5.1 Snapshot Structure
 
-```rust
-pub struct Snapshot {
-    pub schema_version: u32,
-    pub version: u64,
-    pub created_at: i64,
-    pub lamport: u64,
-    pub issue_hashes: Vec<String>,
-    pub edge_hashes: Vec<String>,
-}
+The snapshot IS the tree - no separate metadata file:
+
+```
+refs/sterna/snapshot → commit → tree
+                               ├── issues/
+                               │   └── <id> → blob (issue JSON)
+                               └── edges/
+                                   └── <src>_<tgt>_<type> → blob (edge JSON)
 ```
 
-**Git tree structure:**
-```
-refs/sterna/snapshot -> commit -> tree
-                                  ├── snapshot.json
-                                  ├── issues/
-                                  │   ├── st-a3f8 -> blob
-                                  │   └── st-b4f9 -> blob
-                                  └── edges/
-                                      └── ... -> blob
-```
+Each operation creates a new commit, so git log shows full history.
 
 ### 5.2 `st pull`
 
-1. `git fetch origin refs/sterna/snapshot:refs/sterna/remote`
-2. Load remote snapshot
-3. Merge issues (LWW by Lamport)
-4. Merge edges (union)
-5. Rebuild local index from merged state
-6. Create new local snapshot
+1. Fetch: `refs/sterna/snapshot → refs/sterna/remote`
+2. Walk remote tree, merge issues (LWW by Lamport)
+3. Merge edges (union - skip duplicates)
+4. Each merge creates a new snapshot commit
+5. Delete temporary refs/sterna/remote
 
 ### 5.3 `st push`
 
-1. Build snapshot from current index
-2. Create commit with tree
-3. Update `refs/sterna/snapshot`
-4. `git push origin refs/sterna/snapshot`
+Simply push the ref:
+```
+git push origin refs/sterna/snapshot:refs/sterna/snapshot
+```
+
+Since all state is in the snapshot commit tree, pushing transfers everything.
 
 ---
 
@@ -866,9 +845,9 @@ if args.json {
 ```
 src/
 ├── main.rs           # CLI entry, clap setup
-├── types.rs          # Issue, Edge, Snapshot, enums
-├── storage.rs        # Git blob read/write, get_editor
-├── index.rs          # IssueIndex, EdgeIndex
+├── types.rs          # Issue, Edge, enums
+├── storage.rs        # get_editor()
+├── snapshot.rs       # Git-native tree-based storage
 ├── id.rs             # ID generation
 ├── dag.rs            # Cycle detection
 ├── error.rs          # Error types
@@ -890,8 +869,9 @@ src/
     ├── purge.rs
     ├── pull.rs
     ├── push.rs
-    ├── sync.rs
     ├── onboard.rs
     └── prime.rs
 ```
+
+**No working directory files.** All state in `.git/refs/sterna/snapshot`.
 
