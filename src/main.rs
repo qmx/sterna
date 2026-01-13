@@ -177,6 +177,12 @@ enum Commands {
         remote: Option<String>,
     },
 
+    /// Pull then push (convenience command)
+    Sync {
+        /// Remote name (default: origin)
+        remote: Option<String>,
+    },
+
     /// Show onboarding info for agents
     Onboard {
         /// Export default content to stdout (for customization)
@@ -285,6 +291,7 @@ fn main() {
         Commands::Purge { yes } => commands::purge::run(yes),
         Commands::Push { remote } => commands::push::run(remote),
         Commands::Pull { remote } => commands::pull::run(remote),
+        Commands::Sync { remote } => commands::sync::run(remote),
         Commands::Onboard { export } => commands::onboard::run(export),
         Commands::Prime { export } => commands::prime::run(export),
     };

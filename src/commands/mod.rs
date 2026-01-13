@@ -15,4 +15,5 @@ pub mod push;
 pub mod ready;
 pub mod release;
 pub mod reopen;
+pub mod sync;
 pub mod update;
