@@ -121,32 +121,43 @@ Cycle detection prevents circular dependencies.
 
 | Command | Description |
 |---------|-------------|
-| `st onboard` | Brief intro for AI agents (~100-200 tokens) |
-| `st prime` | Full workflow reference (~1-2k tokens) |
+| `st onboard` | Comprehensive command reference |
+| `st prime` | Lean workflow context for active sessions |
 
 ## Agent Integration
 
-Sterna is designed for use with AI coding agents like Claude Code.
+### Claude Code
 
-**Add to your project's AGENTS.md:**
-```markdown
-## Issue Tracking
-This project uses Sterna. Run `st onboard` for context.
-```
-
-**Optional: Configure Claude Code hooks in `~/.claude/settings.json`:**
+Add `.claude/settings.json` to your project:
 ```json
 {
   "hooks": {
-    "SessionStart": [{ "type": "command", "command": "st onboard" }],
-    "PreCompact": [{ "type": "command", "command": "st prime" }]
+    "SessionStart": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "st prime" }] }
+    ],
+    "PreCompact": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "st prime" }] }
+    ]
+  },
+  "permissions": {
+    "allow": ["Bash(st :*)"]
   }
 }
 ```
 
-**Customize output:** Create `~/.config/sterna/onboard.md` or `~/.config/sterna/prime.md` to override defaults.
+### OpenCode
 
-See [AGENTS.md](AGENTS.md) for development guidelines.
+Run `st prime` at session start for workflow context.
+
+### Other Agents
+
+Add to AGENTS.md:
+```markdown
+## Issue Tracking
+This project uses Sterna. Run `st prime` for workflow context.
+```
+
+**Customize output:** Create `~/.config/sterna/onboard.md` or `~/.config/sterna/prime.md` to override defaults.
 
 ## Workflow
 
