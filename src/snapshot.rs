@@ -41,15 +41,12 @@ pub fn init(repo: &Repository) -> Result<(), Error> {
         return Err(Error::AlreadyInitialized);
     }
 
-    // Create empty issues subtree
     let issues_builder = repo.treebuilder(None)?;
     let issues_oid = issues_builder.write()?;
 
-    // Create empty edges subtree
     let edges_builder = repo.treebuilder(None)?;
     let edges_oid = edges_builder.write()?;
 
-    // Create root tree with both subtrees
     let mut root_builder = repo.treebuilder(None)?;
     root_builder.insert("issues", issues_oid, 0o040000)?;
     root_builder.insert("edges", edges_oid, 0o040000)?;
@@ -169,11 +166,9 @@ pub fn save_issue(repo: &Repository, issue: &Issue, message: &str) -> Result<(),
     let issues_tree = get_subtree(repo, &current_tree, "issues")?;
     let edges_tree = get_subtree(repo, &current_tree, "edges")?;
 
-    // Write issue blob
     let blob_content = serde_json::to_vec(issue)?;
     let blob_oid = repo.blob(&blob_content)?;
 
-    // Build new issues subtree
     let mut issues_builder = repo.treebuilder(Some(&issues_tree))?;
     issues_builder.insert(&issue.id, blob_oid, 0o100644)?;
     let new_issues_oid = issues_builder.write()?;
@@ -183,8 +178,6 @@ pub fn save_issue(repo: &Repository, issue: &Issue, message: &str) -> Result<(),
     root_builder.insert("issues", new_issues_oid, 0o040000)?;
     root_builder.insert("edges", edges_tree.id(), 0o040000)?;
     let new_tree_oid = root_builder.write()?;
-
-    // Create commit
     let new_tree = repo.find_tree(new_tree_oid)?;
     let sig = repo.signature()?;
 
@@ -211,14 +204,12 @@ pub fn save_edge(repo: &Repository, edge: &Edge, message: &str) -> Result<(), Er
     let issues_tree = get_subtree(repo, &current_tree, "issues")?;
     let edges_tree = get_subtree(repo, &current_tree, "edges")?;
 
-    // Write edge blob
     let blob_content = serde_json::to_vec(edge)?;
     let blob_oid = repo.blob(&blob_content)?;
 
     // Edge filename: source_target_type
     let edge_name = format!("{}_{}_{}", edge.source, edge.target, edge.edge_type.as_str());
 
-    // Build new edges subtree
     let mut edges_builder = repo.treebuilder(Some(&edges_tree))?;
     edges_builder.insert(&edge_name, blob_oid, 0o100644)?;
     let new_edges_oid = edges_builder.write()?;
@@ -228,8 +219,6 @@ pub fn save_edge(repo: &Repository, edge: &Edge, message: &str) -> Result<(), Er
     root_builder.insert("issues", issues_tree.id(), 0o040000)?;
     root_builder.insert("edges", new_edges_oid, 0o040000)?;
     let new_tree_oid = root_builder.write()?;
-
-    // Create commit
     let new_tree = repo.find_tree(new_tree_oid)?;
     let sig = repo.signature()?;
 

@@ -15,10 +15,8 @@ pub fn run(
 ) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
 
-    // Resolve source issue
     let source_id = snapshot::find_issue_id(&repo, &source)?;
 
-    // Determine edge type and target
     let (target_prefix, edge_type) = if let Some(t) = needs {
         (t, EdgeType::DependsOn)
     } else if let Some(t) = blocks {
@@ -33,26 +31,21 @@ pub fn run(
         return Err(Error::NoEdgeTarget);
     };
 
-    // Resolve target issue
     let target_id = snapshot::find_issue_id(&repo, &target_prefix)?;
 
-    // Check for self-reference
     if source_id == target_id {
         return Err(Error::SelfReference(source_id));
     }
 
-    // Check for duplicate edge
     if snapshot::edge_exists(&repo, &source_id, &target_id, edge_type)? {
         return Err(Error::DuplicateEdge(source_id, target_id));
     }
 
-    // Check for cycles
     let edges = snapshot::load_edges(&repo)?;
     if dag::would_create_cycle(&edges, &source_id, &target_id, edge_type) {
         return Err(Error::WouldCreateCycle(source_id, target_id));
     }
 
-    // Create edge
     let edge = Edge {
         schema_version: SCHEMA_VERSION,
         source: source_id.clone(),

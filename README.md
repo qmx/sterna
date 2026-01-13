@@ -170,8 +170,7 @@ st push                               # Share local changes
 
 Git-native, local-first, no daemon, no SQLite.
 
-- **Storage:** Issues and edges stored as Git blobs, protected by `refs/sterna/snapshot`
-- **Index:** Local `sterna/index/` files for fast operations
+- **Storage:** All state in `refs/sterna/snapshot` (commit → tree with issues/ and edges/)
 - **Merge:** CRDT with Lamport clocks (Last-Write-Wins)
 - **Dependencies:** DAG with cycle detection
 

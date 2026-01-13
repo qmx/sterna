@@ -20,11 +20,9 @@ struct Import {
 pub fn run(file: String) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
 
-    // Load existing data
     let existing_issues = snapshot::load_issues(&repo)?;
     let existing_edges = snapshot::load_edges(&repo)?;
 
-    // Parse import file
     let content = fs::read_to_string(&file)?;
     let import: Import = serde_json::from_str(&content)?;
 
@@ -35,9 +33,7 @@ pub fn run(file: String) -> Result<(), Error> {
     // Merge issues (LWW by Lamport)
     for imported_issue in import.issues {
         if let Some(existing_issue) = existing_issues.get(&imported_issue.id) {
-            // Issue exists - check Lamport clock
             if imported_issue.lamport > existing_issue.lamport {
-                // Imported is newer - replace
                 snapshot::save_issue(
                     &repo,
                     &imported_issue,
@@ -46,7 +42,6 @@ pub fn run(file: String) -> Result<(), Error> {
                 issues_updated += 1;
             }
         } else {
-            // New issue - insert
             snapshot::save_issue(
                 &repo,
                 &imported_issue,

@@ -8,7 +8,6 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
     let remote_name = remote.unwrap_or_else(|| "origin".to_string());
 
-    // Fetch remote snapshot ref
     let mut git_remote = repo.find_remote(&remote_name)?;
     git_remote.fetch(
         &["refs/sterna/snapshot:refs/sterna/remote"],
@@ -16,12 +15,10 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
         None,
     )?;
 
-    // Load remote snapshot
     let remote_ref = repo.find_reference("refs/sterna/remote")?;
     let remote_commit = remote_ref.peel_to_commit()?;
     let remote_tree = remote_commit.tree()?;
 
-    // Load local data
     let local_issues = snapshot::load_issues(&repo)?;
     let local_edges = snapshot::load_edges(&repo)?;
 
@@ -29,7 +26,6 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
     let mut issues_updated = 0;
     let mut edges_added = 0;
 
-    // Load remote issues subtree
     let issues_tree_entry = remote_tree
         .get_name("issues")
         .ok_or(Error::InvalidSnapshot)?;
@@ -40,9 +36,7 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
         let remote_issue = Issue::from_json(blob.content())?;
 
         if let Some(existing_issue) = local_issues.get(&remote_issue.id) {
-            // Issue exists - check Lamport clock
             if remote_issue.lamport > existing_issue.lamport {
-                // Remote is newer - replace
                 snapshot::save_issue(
                     &repo,
                     &remote_issue,
@@ -51,7 +45,6 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
                 issues_updated += 1;
             }
         } else {
-            // New issue - insert
             snapshot::save_issue(
                 &repo,
                 &remote_issue,
@@ -92,7 +85,6 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
         }
     }
 
-    // Clean up remote ref
     repo.find_reference("refs/sterna/remote")?.delete()?;
 
     eprintln!(

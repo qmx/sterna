@@ -13,12 +13,10 @@ pub fn run(yes: bool) -> Result<(), Error> {
         return Err(Error::NotInitialized);
     }
 
-    // Export current data as backup to stdout
     eprintln!("Exporting current data as backup...");
     export::run(None)?;
     eprintln!();
 
-    // Prompt for confirmation unless --yes
     if !yes {
         eprint!("This will remove all Sterna data. Continue? [y/N] ");
         io::stderr().flush()?;
@@ -32,7 +30,6 @@ pub fn run(yes: bool) -> Result<(), Error> {
         }
     }
 
-    // Delete the snapshot ref
     snapshot::delete_snapshot(&repo)?;
     eprintln!("Removed refs/sterna/snapshot");
 
