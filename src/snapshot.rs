@@ -257,6 +257,62 @@ pub fn save_edge(repo: &Repository, edge: &Edge, message: &str) -> Result<(), Er
     Ok(())
 }
 
+/// Merge multiple issues and edges in a single commit
+pub fn merge_snapshot(
+    repo: &Repository,
+    issues: &[Issue],
+    edges: &[Edge],
+    message: &str,
+) -> Result<(), Error> {
+    if !is_initialized(repo) {
+        return Err(Error::NotInitialized);
+    }
+    if issues.is_empty() && edges.is_empty() {
+        return Ok(());
+    }
+    let _lock = SnapshotLock::acquire(repo)?;
+
+    let current_commit = get_snapshot_commit(repo)?;
+    let current_tree = current_commit.tree()?;
+    let issues_tree = get_subtree(repo, &current_tree, "issues")?;
+    let edges_tree = get_subtree(repo, &current_tree, "edges")?;
+
+    let mut issues_builder = repo.treebuilder(Some(&issues_tree))?;
+    for issue in issues {
+        let blob_content = serde_json::to_vec(issue)?;
+        let blob_oid = repo.blob(&blob_content)?;
+        issues_builder.insert(&issue.id, blob_oid, 0o100644)?;
+    }
+    let new_issues_oid = issues_builder.write()?;
+
+    let mut edges_builder = repo.treebuilder(Some(&edges_tree))?;
+    for edge in edges {
+        let edge_name = format!("{}_{}_{}", edge.source, edge.target, edge.edge_type.as_str());
+        let blob_content = serde_json::to_vec(edge)?;
+        let blob_oid = repo.blob(&blob_content)?;
+        edges_builder.insert(&edge_name, blob_oid, 0o100644)?;
+    }
+    let new_edges_oid = edges_builder.write()?;
+
+    let mut root_builder = repo.treebuilder(None)?;
+    root_builder.insert("issues", new_issues_oid, 0o040000)?;
+    root_builder.insert("edges", new_edges_oid, 0o040000)?;
+    let new_tree_oid = root_builder.write()?;
+    let new_tree = repo.find_tree(new_tree_oid)?;
+    let sig = repo.signature()?;
+
+    repo.commit(
+        Some(SNAPSHOT_REF),
+        &sig,
+        &sig,
+        message,
+        &new_tree,
+        &[&current_commit],
+    )?;
+
+    Ok(())
+}
+
 /// Delete an edge
 pub fn delete_edge(
     repo: &Repository,

@@ -22,9 +22,8 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
     let local_issues = snapshot::load_issues(&repo)?;
     let local_edges = snapshot::load_edges(&repo)?;
 
-    let mut issues_added = 0;
-    let mut issues_updated = 0;
-    let mut edges_added = 0;
+    let mut issues_to_save: Vec<Issue> = Vec::new();
+    let mut edges_to_add: Vec<Edge> = Vec::new();
 
     let issues_tree_entry = remote_tree
         .get_name("issues")
@@ -35,25 +34,16 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
         let blob = repo.find_blob(entry.id())?;
         let remote_issue = Issue::from_json(blob.content())?;
 
-        if let Some(existing_issue) = local_issues.get(&remote_issue.id) {
-            if remote_issue.lamport > existing_issue.lamport
-                || (remote_issue.lamport == existing_issue.lamport
-                    && remote_issue.updated_at > existing_issue.updated_at)
-            {
-                snapshot::save_issue(
-                    &repo,
-                    &remote_issue,
-                    &format!("Pull: update issue {}", remote_issue.id),
-                )?;
-                issues_updated += 1;
-            }
+        let dominated = if let Some(existing) = local_issues.get(&remote_issue.id) {
+            remote_issue.lamport > existing.lamport
+                || (remote_issue.lamport == existing.lamport
+                    && remote_issue.updated_at > existing.updated_at)
         } else {
-            snapshot::save_issue(
-                &repo,
-                &remote_issue,
-                &format!("Pull: add issue {}", remote_issue.id),
-            )?;
-            issues_added += 1;
+            true
+        };
+
+        if dominated {
+            issues_to_save.push(remote_issue);
         }
     }
 
@@ -74,18 +64,30 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
         });
 
         if !exists {
-            snapshot::save_edge(
-                &repo,
-                &remote_edge,
-                &format!(
-                    "Pull: add edge {} {} {}",
-                    remote_edge.source,
-                    remote_edge.edge_type.as_str(),
-                    remote_edge.target
-                ),
-            )?;
-            edges_added += 1;
+            edges_to_add.push(remote_edge);
         }
+    }
+
+    // Single batch commit
+    let issues_added = issues_to_save
+        .iter()
+        .filter(|i| !local_issues.contains_key(&i.id))
+        .count();
+    let issues_updated = issues_to_save.len() - issues_added;
+    let edges_added = edges_to_add.len();
+
+    if !issues_to_save.is_empty() || !edges_to_add.is_empty() {
+        snapshot::merge_snapshot(
+            &repo,
+            &issues_to_save,
+            &edges_to_add,
+            &format!(
+                "Pull from {}: {} issues, {} edges",
+                remote_name,
+                issues_to_save.len(),
+                edges_to_add.len()
+            ),
+        )?;
     }
 
     repo.find_reference("refs/sterna/remote")?.delete()?;

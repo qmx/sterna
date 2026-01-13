@@ -27,36 +27,26 @@ pub fn run(file: String) -> Result<(), Error> {
     let content = fs::read_to_string(&file)?;
     let import: Import = serde_json::from_str(&content)?;
 
-    let mut issues_added = 0;
-    let mut issues_updated = 0;
-    let mut edges_added = 0;
+    let mut issues_to_save: Vec<Issue> = Vec::new();
+    let mut edges_to_add: Vec<Edge> = Vec::new();
+    let mut edges_skipped = 0;
 
-    // Merge issues (LWW by Lamport)
+    // Collect issues (LWW by Lamport)
     for imported_issue in import.issues {
-        if let Some(existing_issue) = existing_issues.get(&imported_issue.id) {
-            if imported_issue.lamport > existing_issue.lamport
-                || (imported_issue.lamport == existing_issue.lamport
-                    && imported_issue.updated_at > existing_issue.updated_at)
-            {
-                snapshot::save_issue(
-                    &repo,
-                    &imported_issue,
-                    &format!("Import: update issue {}", imported_issue.id),
-                )?;
-                issues_updated += 1;
-            }
+        let dominated = if let Some(existing) = existing_issues.get(&imported_issue.id) {
+            imported_issue.lamport > existing.lamport
+                || (imported_issue.lamport == existing.lamport
+                    && imported_issue.updated_at > existing.updated_at)
         } else {
-            snapshot::save_issue(
-                &repo,
-                &imported_issue,
-                &format!("Import: add issue {}", imported_issue.id),
-            )?;
-            issues_added += 1;
+            true
+        };
+
+        if dominated {
+            issues_to_save.push(imported_issue);
         }
     }
 
-    // Merge edges (union - skip duplicates and cycles)
-    let mut edges_skipped = 0;
+    // Collect edges (union - skip duplicates and cycles)
     let mut current_edges = existing_edges.clone();
 
     for imported_edge in import.edges {
@@ -89,18 +79,30 @@ pub fn run(file: String) -> Result<(), Error> {
             }
         }
 
-        snapshot::save_edge(
+        current_edges.push(imported_edge.clone());
+        edges_to_add.push(imported_edge);
+    }
+
+    // Calculate counts
+    let issues_added = issues_to_save
+        .iter()
+        .filter(|i| !existing_issues.contains_key(&i.id))
+        .count();
+    let issues_updated = issues_to_save.len() - issues_added;
+    let edges_added = edges_to_add.len();
+
+    // Single batch commit
+    if !issues_to_save.is_empty() || !edges_to_add.is_empty() {
+        snapshot::merge_snapshot(
             &repo,
-            &imported_edge,
+            &issues_to_save,
+            &edges_to_add,
             &format!(
-                "Import: add edge {} {} {}",
-                imported_edge.source,
-                imported_edge.edge_type.as_str(),
-                imported_edge.target
+                "Import: {} issues, {} edges",
+                issues_to_save.len(),
+                edges_to_add.len()
             ),
         )?;
-        current_edges.push(imported_edge);
-        edges_added += 1;
     }
 
     println!(
