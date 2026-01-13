@@ -45,11 +45,6 @@ At session end:
 - st import <file>     Import data from JSON
 - st purge             Remove all Sterna data
 
-## Sync
-- st push [remote]     Push snapshot to remote
-- st pull [remote]     Pull and merge from remote
-- st sync [remote]     Pull then push
-
 ## Agent Commands
 - st onboard           Show onboarding info
 - st prime             Show this reference
