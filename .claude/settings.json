@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "st prime" }]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "st prime" }]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": ["Bash(st :*)"]
+  }
+}
