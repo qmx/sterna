@@ -33,7 +33,10 @@ pub fn run(file: String) -> Result<(), Error> {
     // Merge issues (LWW by Lamport)
     for imported_issue in import.issues {
         if let Some(existing_issue) = existing_issues.get(&imported_issue.id) {
-            if imported_issue.lamport > existing_issue.lamport {
+            if imported_issue.lamport > existing_issue.lamport
+                || (imported_issue.lamport == existing_issue.lamport
+                    && imported_issue.updated_at > existing_issue.updated_at)
+            {
                 snapshot::save_issue(
                     &repo,
                     &imported_issue,

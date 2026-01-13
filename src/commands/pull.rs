@@ -36,7 +36,10 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
         let remote_issue = Issue::from_json(blob.content())?;
 
         if let Some(existing_issue) = local_issues.get(&remote_issue.id) {
-            if remote_issue.lamport > existing_issue.lamport {
+            if remote_issue.lamport > existing_issue.lamport
+                || (remote_issue.lamport == existing_issue.lamport
+                    && remote_issue.updated_at > existing_issue.updated_at)
+            {
                 snapshot::save_issue(
                     &repo,
                     &remote_issue,
