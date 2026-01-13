@@ -87,9 +87,10 @@ fn is_blocked(issue_id: &str, edges: &[Edge], issues: &HashMap<String, Issue>) -
 }
 
 fn truncate(s: &str, max_len: usize) -> String {
-    if s.len() <= max_len {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() <= max_len {
         s.to_string()
     } else {
-        format!("{}...", &s[..max_len - 3])
+        format!("{}...", chars[..max_len - 3].iter().collect::<String>())
     }
 }
