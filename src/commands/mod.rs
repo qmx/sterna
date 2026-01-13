@@ -1,7 +1,7 @@
 pub mod claim;
 pub mod close;
 pub mod create;
-pub mod depend;
+pub mod dep;
 pub mod export;
 pub mod get;
 pub mod import;

@@ -257,6 +257,53 @@ pub fn save_edge(repo: &Repository, edge: &Edge, message: &str) -> Result<(), Er
     Ok(())
 }
 
+/// Delete an edge
+pub fn delete_edge(
+    repo: &Repository,
+    source: &str,
+    target: &str,
+    edge_type: EdgeType,
+    message: &str,
+) -> Result<bool, Error> {
+    if !is_initialized(repo) {
+        return Err(Error::NotInitialized);
+    }
+    let _lock = SnapshotLock::acquire(repo)?;
+
+    let current_commit = get_snapshot_commit(repo)?;
+    let current_tree = current_commit.tree()?;
+    let issues_tree = get_subtree(repo, &current_tree, "issues")?;
+    let edges_tree = get_subtree(repo, &current_tree, "edges")?;
+
+    let edge_name = format!("{}_{}_{}", source, target, edge_type.as_str());
+
+    if edges_tree.get_name(&edge_name).is_none() {
+        return Ok(false);
+    }
+
+    let mut edges_builder = repo.treebuilder(Some(&edges_tree))?;
+    edges_builder.remove(&edge_name)?;
+    let new_edges_oid = edges_builder.write()?;
+
+    let mut root_builder = repo.treebuilder(None)?;
+    root_builder.insert("issues", issues_tree.id(), 0o040000)?;
+    root_builder.insert("edges", new_edges_oid, 0o040000)?;
+    let new_tree_oid = root_builder.write()?;
+    let new_tree = repo.find_tree(new_tree_oid)?;
+    let sig = repo.signature()?;
+
+    repo.commit(
+        Some(SNAPSHOT_REF),
+        &sig,
+        &sig,
+        message,
+        &new_tree,
+        &[&current_commit],
+    )?;
+
+    Ok(true)
+}
+
 /// Delete the snapshot ref (for purge)
 pub fn delete_snapshot(repo: &Repository) -> Result<(), Error> {
     if let Ok(mut reference) = repo.find_reference(SNAPSHOT_REF) {

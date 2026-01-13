@@ -141,31 +141,9 @@ enum Commands {
         label: Option<Vec<String>>,
     },
 
-    /// Create a dependency between issues
-    Depend {
-        /// Source issue ID
-        source: String,
-
-        /// Target issue that source depends on (needs done first)
-        #[arg(long)]
-        needs: Option<String>,
-
-        /// Target issue that source blocks
-        #[arg(long)]
-        blocks: Option<String>,
-
-        /// Target issue that source relates to
-        #[arg(long)]
-        relates_to: Option<String>,
-
-        /// Target issue that is parent of source
-        #[arg(long)]
-        parent: Option<String>,
-
-        /// Target issue that source duplicates
-        #[arg(long)]
-        duplicates: Option<String>,
-    },
+    /// Manage dependencies between issues
+    #[command(subcommand)]
+    Dep(DepCommands),
 
     /// Export all issues and edges to JSON
     Export {
@@ -214,6 +192,61 @@ enum Commands {
     },
 }
 
+#[derive(Subcommand)]
+enum DepCommands {
+    /// Add a dependency between issues
+    Add {
+        /// Source issue ID
+        source: String,
+
+        /// Target issue that source depends on (needs done first)
+        #[arg(long)]
+        needs: Option<String>,
+
+        /// Target issue that source blocks
+        #[arg(long)]
+        blocks: Option<String>,
+
+        /// Target issue that source relates to
+        #[arg(long)]
+        relates_to: Option<String>,
+
+        /// Target issue that is parent of source
+        #[arg(long)]
+        parent: Option<String>,
+
+        /// Target issue that source duplicates
+        #[arg(long)]
+        duplicates: Option<String>,
+    },
+
+    /// Remove a dependency between issues
+    Remove {
+        /// Source issue ID
+        source: String,
+
+        /// Target issue that source depends on
+        #[arg(long)]
+        needs: Option<String>,
+
+        /// Target issue that source blocks
+        #[arg(long)]
+        blocks: Option<String>,
+
+        /// Target issue that source relates to
+        #[arg(long)]
+        relates_to: Option<String>,
+
+        /// Target issue that is parent of source
+        #[arg(long)]
+        parent: Option<String>,
+
+        /// Target issue that source duplicates
+        #[arg(long)]
+        duplicates: Option<String>,
+    },
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -241,14 +274,12 @@ fn main() {
             issue_type,
             label,
         } => commands::update::run(id, title, description, priority, issue_type, label),
-        Commands::Depend {
-            source,
-            needs,
-            blocks,
-            relates_to,
-            parent,
-            duplicates,
-        } => commands::depend::run(source, needs, blocks, relates_to, parent, duplicates),
+        Commands::Dep(cmd) => match cmd {
+            DepCommands::Add { source, needs, blocks, relates_to, parent, duplicates } =>
+                commands::dep::add(source, needs, blocks, relates_to, parent, duplicates),
+            DepCommands::Remove { source, needs, blocks, relates_to, parent, duplicates } =>
+                commands::dep::remove(source, needs, blocks, relates_to, parent, duplicates),
+        },
         Commands::Export { output } => commands::export::run(output),
         Commands::Import { file } => commands::import::run(file),
         Commands::Purge { yes } => commands::purge::run(yes),

@@ -5,7 +5,7 @@ use crate::error::Error;
 use crate::snapshot;
 use crate::types::{Edge, EdgeType, SCHEMA_VERSION};
 
-pub fn run(
+pub fn add(
     source: String,
     needs: Option<String>,
     blocks: Option<String>,
@@ -61,5 +61,48 @@ pub fn run(
     )?;
 
     println!("{} {} {}", source_id, edge_type.as_str(), target_id);
+    Ok(())
+}
+
+pub fn remove(
+    source: String,
+    needs: Option<String>,
+    blocks: Option<String>,
+    relates_to: Option<String>,
+    parent: Option<String>,
+    duplicates: Option<String>,
+) -> Result<(), Error> {
+    let repo = Repository::discover(".")?;
+
+    let (target_prefix, edge_type) = if let Some(t) = needs {
+        (t, EdgeType::DependsOn)
+    } else if let Some(t) = blocks {
+        (t, EdgeType::Blocks)
+    } else if let Some(t) = relates_to {
+        (t, EdgeType::RelatesTo)
+    } else if let Some(t) = parent {
+        (t, EdgeType::ParentChild)
+    } else if let Some(t) = duplicates {
+        (t, EdgeType::Duplicates)
+    } else {
+        return Err(Error::NoEdgeTarget);
+    };
+
+    let source_id = snapshot::find_issue_id(&repo, &source)?;
+    let target_id = snapshot::find_issue_id(&repo, &target_prefix)?;
+
+    let deleted = snapshot::delete_edge(
+        &repo,
+        &source_id,
+        &target_id,
+        edge_type,
+        &format!("Remove edge: {} {} {}", source_id, edge_type.as_str(), target_id),
+    )?;
+
+    if deleted {
+        println!("Removed: {} {} {}", source_id, edge_type.as_str(), target_id);
+    } else {
+        println!("Edge not found: {} {} {}", source_id, edge_type.as_str(), target_id);
+    }
     Ok(())
 }
