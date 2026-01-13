@@ -93,11 +93,12 @@ st push
 
 | Command | Description |
 |---------|-------------|
-| `st depend <id> --needs <other>` | A depends on B (A blocked by B) |
-| `st depend <id> --blocks <other>` | A blocks B |
-| `st depend <id> --relates-to <other>` | Non-blocking relation |
-| `st depend <id> --parent <other>` | Parent-child hierarchy |
-| `st depend <id> --duplicates <other>` | Mark as duplicate |
+| `st dep add <id> --needs <other>` | A depends on B (A blocked by B) |
+| `st dep add <id> --blocks <other>` | A blocks B |
+| `st dep add <id> --relates-to <other>` | Non-blocking relation |
+| `st dep add <id> --parent <other>` | Parent-child hierarchy |
+| `st dep add <id> --duplicates <other>` | Mark as duplicate |
+| `st dep remove <id> --needs <other>` | Remove a dependency |
 
 Cycle detection prevents circular dependencies.
 
