@@ -1,35 +1,33 @@
 use git2::Repository;
 
 use crate::error::Error;
-use crate::index::IssueIndex;
-use crate::storage;
+use crate::snapshot;
 use crate::types::{Issue, IssueType, Status};
 
 pub fn run(status: Option<String>, issue_type: Option<String>, json: bool) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
-    let index = IssueIndex::load(repo_path)?;
 
     let status_filter = status.map(|s| parse_status(&s)).transpose()?;
     let type_filter = issue_type.map(|t| IssueType::from_str(&t)).transpose()?;
 
-    let mut issues: Vec<Issue> = Vec::new();
-    for (_, oid) in &index.entries {
-        let data = storage::read_blob(&repo, *oid)?;
-        let issue = Issue::from_json(&data)?;
+    let all_issues = snapshot::load_issues(&repo)?;
 
-        if let Some(ref s) = status_filter {
-            if issue.status != *s {
-                continue;
+    let mut issues: Vec<Issue> = all_issues
+        .into_values()
+        .filter(|issue| {
+            if let Some(ref s) = status_filter {
+                if issue.status != *s {
+                    return false;
+                }
             }
-        }
-        if let Some(ref t) = type_filter {
-            if issue.issue_type != *t {
-                continue;
+            if let Some(ref t) = type_filter {
+                if issue.issue_type != *t {
+                    return false;
+                }
             }
-        }
-        issues.push(issue);
-    }
+            true
+        })
+        .collect();
 
     issues.sort_by(|a, b| (a.priority, a.created_at).cmp(&(b.priority, b.created_at)));
 

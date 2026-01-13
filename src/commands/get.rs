@@ -2,18 +2,13 @@ use chrono::{TimeZone, Utc};
 use git2::Repository;
 
 use crate::error::Error;
-use crate::index::IssueIndex;
-use crate::storage;
+use crate::snapshot;
 use crate::types::Issue;
 
 pub fn run(id_prefix: String, json: bool) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
-    let index = IssueIndex::load(repo_path)?;
 
-    let (_, oid) = index.find_unique(&id_prefix)?;
-    let data = storage::read_blob(&repo, oid)?;
-    let issue = Issue::from_json(&data)?;
+    let issue = snapshot::load_issue(&repo, &id_prefix)?;
 
     if json {
         println!("{}", serde_json::to_string_pretty(&issue)?);

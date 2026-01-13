@@ -4,7 +4,7 @@ mod commands;
 mod dag;
 mod error;
 mod id;
-mod index;
+mod snapshot;
 mod storage;
 mod types;
 

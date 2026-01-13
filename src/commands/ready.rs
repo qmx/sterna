@@ -3,30 +3,21 @@ use std::collections::HashMap;
 use git2::Repository;
 
 use crate::error::Error;
-use crate::index::{EdgeIndex, IssueIndex};
-use crate::storage;
-use crate::types::{EdgeType, Issue, Status};
+use crate::snapshot;
+use crate::types::{Edge, EdgeType, Issue, Status};
 
 pub fn run(json: bool) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
-    let issue_index = IssueIndex::load(repo_path)?;
-    let edge_index = EdgeIndex::load(repo_path)?;
 
-    // Load all issues and build a map of id -> status
-    let mut all_issues: HashMap<String, Issue> = HashMap::new();
-    for (id, oid) in &issue_index.entries {
-        let data = storage::read_blob(&repo, *oid)?;
-        let issue = Issue::from_json(&data)?;
-        all_issues.insert(id.clone(), issue);
-    }
+    let all_issues = snapshot::load_issues(&repo)?;
+    let edges = snapshot::load_edges(&repo)?;
 
     let mut ready_issues: Vec<Issue> = Vec::new();
-    for issue in all_issues.into_values() {
+    for issue in all_issues.values() {
         // Ready = open AND not claimed AND not blocked
         if issue.status == Status::Open && !issue.claimed {
-            if !is_blocked(&issue.id, &edge_index, &all_issues_for_blocking(&repo, &issue_index)?) {
-                ready_issues.push(issue);
+            if !is_blocked(&issue.id, &edges, &all_issues) {
+                ready_issues.push(issue.clone());
             }
         }
     }
@@ -51,25 +42,12 @@ pub fn run(json: bool) -> Result<(), Error> {
     Ok(())
 }
 
-fn all_issues_for_blocking(
-    repo: &Repository,
-    index: &IssueIndex,
-) -> Result<HashMap<String, Issue>, Error> {
-    let mut issues = HashMap::new();
-    for (id, oid) in &index.entries {
-        let data = storage::read_blob(repo, *oid)?;
-        let issue = Issue::from_json(&data)?;
-        issues.insert(id.clone(), issue);
-    }
-    Ok(issues)
-}
-
 /// Check if an issue is blocked by unclosed dependencies.
 /// An issue is blocked if:
 /// - It has a DependsOn edge to an unclosed issue
 /// - Another issue has a Blocks edge pointing to it and that issue is unclosed
-fn is_blocked(issue_id: &str, edges: &EdgeIndex, issues: &HashMap<String, Issue>) -> bool {
-    for edge in &edges.entries {
+fn is_blocked(issue_id: &str, edges: &[Edge], issues: &HashMap<String, Issue>) -> bool {
+    for edge in edges {
         match edge.edge_type {
             EdgeType::DependsOn => {
                 // If this issue depends on another, check if target is closed

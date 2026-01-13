@@ -1,10 +1,8 @@
-use std::collections::HashSet;
-
 use git2::Repository;
 
 use crate::error::Error;
 use crate::id;
-use crate::index::IssueIndex;
+use crate::snapshot;
 use crate::storage;
 use crate::types::{Issue, IssueType, Priority, Status, SCHEMA_VERSION};
 
@@ -16,11 +14,9 @@ pub fn run(
     labels: Vec<String>,
 ) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
     let editor = storage::get_editor()?;
 
-    let mut index = IssueIndex::load(repo_path)?;
-    let existing_ids: HashSet<String> = index.entries.keys().cloned().collect();
+    let existing_ids = snapshot::get_existing_ids(&repo)?;
 
     let id = id::generate_id(
         &title,
@@ -59,11 +55,7 @@ pub fn run(
         reason: None,
     };
 
-    let content = storage::serialize_issue(&issue)?;
-    let oid = storage::write_blob(&repo, &content)?;
-
-    index.entries.insert(id.clone(), oid);
-    index.save(repo_path)?;
+    snapshot::save_issue(&repo, &issue, &format!("Create issue {}", id))?;
 
     println!("{}", id);
     Ok(())

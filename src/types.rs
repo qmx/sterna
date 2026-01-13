@@ -147,17 +147,6 @@ pub enum EdgeType {
 }
 
 impl EdgeType {
-    pub fn from_str(s: &str) -> Result<Self, Error> {
-        match s.to_lowercase().as_str() {
-            "depends_on" | "dependson" | "needs" => Ok(EdgeType::DependsOn),
-            "blocks" => Ok(EdgeType::Blocks),
-            "parent_child" | "parentchild" | "parent" => Ok(EdgeType::ParentChild),
-            "relates_to" | "relatesto" | "relates" => Ok(EdgeType::RelatesTo),
-            "duplicates" => Ok(EdgeType::Duplicates),
-            _ => Err(Error::InvalidEdgeType(s.to_string())),
-        }
-    }
-
     pub fn as_str(&self) -> &'static str {
         match self {
             EdgeType::DependsOn => "depends_on",

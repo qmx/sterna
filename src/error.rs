@@ -7,10 +7,11 @@ pub enum Error {
     Json(serde_json::Error),
     SchemaMismatch { expected: u32, found: u32 },
     NoIdentity(String),
-    BareRepo,
     NotFound(String),
     AmbiguousId(String, Vec<String>),
     NotInitialized,
+    AlreadyInitialized,
+    CorruptedSnapshot(String),
     AlreadyClaimed(String),
     NotClaimed(String),
     IsClosed(String),
@@ -18,7 +19,6 @@ pub enum Error {
     NotClosed(String),
     InvalidPriority(String),
     InvalidIssueType(String),
-    InvalidEdgeType(String),
     NoEdgeTarget,
     SelfReference(String),
     DuplicateEdge(String, String),
@@ -36,12 +36,13 @@ impl fmt::Display for Error {
                 write!(f, "Schema mismatch: expected {}, found {}", expected, found)
             }
             Error::NoIdentity(msg) => write!(f, "No identity: {}", msg),
-            Error::BareRepo => write!(f, "Cannot operate on bare repository"),
             Error::NotFound(id) => write!(f, "Issue not found: {}", id),
             Error::AmbiguousId(prefix, matches) => {
                 write!(f, "Ambiguous ID '{}': matches {:?}", prefix, matches)
             }
             Error::NotInitialized => write!(f, "Sterna not initialized. Run 'st init' first."),
+            Error::AlreadyInitialized => write!(f, "Sterna is already initialized"),
+            Error::CorruptedSnapshot(msg) => write!(f, "Corrupted snapshot: {}", msg),
             Error::AlreadyClaimed(id) => write!(f, "Issue {} is already claimed", id),
             Error::NotClaimed(id) => write!(f, "Issue {} is not claimed", id),
             Error::IsClosed(id) => write!(f, "Issue {} is closed", id),
@@ -49,7 +50,6 @@ impl fmt::Display for Error {
             Error::NotClosed(id) => write!(f, "Issue {} is not closed", id),
             Error::InvalidPriority(p) => write!(f, "Invalid priority: {}", p),
             Error::InvalidIssueType(t) => write!(f, "Invalid issue type: {}", t),
-            Error::InvalidEdgeType(t) => write!(f, "Invalid edge type: {}", t),
             Error::NoEdgeTarget => write!(f, "Must specify one of: --needs, --blocks, --relates-to, --parent, --duplicates"),
             Error::SelfReference(id) => write!(f, "Cannot create edge to self: {}", id),
             Error::DuplicateEdge(s, t) => write!(f, "Edge already exists: {} -> {}", s, t),

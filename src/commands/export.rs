@@ -4,8 +4,7 @@ use git2::Repository;
 use serde::Serialize;
 
 use crate::error::Error;
-use crate::index::{EdgeIndex, IssueIndex};
-use crate::storage;
+use crate::snapshot;
 use crate::types::{Edge, Issue};
 
 #[derive(Serialize)]
@@ -18,26 +17,9 @@ struct Export {
 
 pub fn run(output: Option<String>) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
 
-    let issue_index = IssueIndex::load(repo_path)?;
-    let edge_index = EdgeIndex::load(repo_path)?;
-
-    // Load all issues
-    let mut issues: Vec<Issue> = Vec::new();
-    for (_, oid) in &issue_index.entries {
-        let data = storage::read_blob(&repo, *oid)?;
-        let issue = Issue::from_json(&data)?;
-        issues.push(issue);
-    }
-
-    // Load all edges
-    let mut edges: Vec<Edge> = Vec::new();
-    for entry in &edge_index.entries {
-        let data = storage::read_blob(&repo, entry.oid)?;
-        let edge = Edge::from_json(&data)?;
-        edges.push(edge);
-    }
+    let issues: Vec<Issue> = snapshot::load_issues(&repo)?.into_values().collect();
+    let edges = snapshot::load_edges(&repo)?;
 
     let export = Export {
         version: 1,

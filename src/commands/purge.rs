@@ -1,18 +1,15 @@
-use std::fs;
 use std::io::{self, Write};
 
 use git2::Repository;
 
 use crate::commands::export;
 use crate::error::Error;
+use crate::snapshot;
 
 pub fn run(yes: bool) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
 
-    let sterna_dir = repo_path.join("sterna");
-
-    if !sterna_dir.exists() {
+    if !snapshot::is_initialized(&repo) {
         return Err(Error::NotInitialized);
     }
 
@@ -35,17 +32,9 @@ pub fn run(yes: bool) -> Result<(), Error> {
         }
     }
 
-    // Delete sterna/ directory
-    fs::remove_dir_all(&sterna_dir)?;
-    eprintln!("Removed sterna/ directory");
-
-    // Delete refs/sterna/* if any exist
-    let git_dir = repo.path();
-    let refs_sterna = git_dir.join("refs").join("sterna");
-    if refs_sterna.exists() {
-        fs::remove_dir_all(&refs_sterna)?;
-        eprintln!("Removed refs/sterna/");
-    }
+    // Delete the snapshot ref
+    snapshot::delete_snapshot(&repo)?;
+    eprintln!("Removed refs/sterna/snapshot");
 
     eprintln!("Purge complete. Orphaned blobs will be cleaned by git gc.");
 

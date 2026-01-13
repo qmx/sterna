@@ -2,8 +2,7 @@ use git2::Repository;
 
 use crate::dag;
 use crate::error::Error;
-use crate::index::{EdgeIndex, IssueIndex};
-use crate::storage;
+use crate::snapshot;
 use crate::types::{Edge, EdgeType, SCHEMA_VERSION};
 
 pub fn run(
@@ -15,13 +14,9 @@ pub fn run(
     duplicates: Option<String>,
 ) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
-
-    let issue_index = IssueIndex::load(repo_path)?;
-    let mut edge_index = EdgeIndex::load(repo_path)?;
 
     // Resolve source issue
-    let (source_id, _) = issue_index.find_unique(&source)?;
+    let source_id = snapshot::find_issue_id(&repo, &source)?;
 
     // Determine edge type and target
     let (target_prefix, edge_type) = if let Some(t) = needs {
@@ -39,7 +34,7 @@ pub fn run(
     };
 
     // Resolve target issue
-    let (target_id, _) = issue_index.find_unique(&target_prefix)?;
+    let target_id = snapshot::find_issue_id(&repo, &target_prefix)?;
 
     // Check for self-reference
     if source_id == target_id {
@@ -47,12 +42,13 @@ pub fn run(
     }
 
     // Check for duplicate edge
-    if edge_index.exists(&source_id, &target_id, edge_type) {
+    if snapshot::edge_exists(&repo, &source_id, &target_id, edge_type)? {
         return Err(Error::DuplicateEdge(source_id, target_id));
     }
 
     // Check for cycles
-    if dag::would_create_cycle(&edge_index, &source_id, &target_id, edge_type) {
+    let edges = snapshot::load_edges(&repo)?;
+    if dag::would_create_cycle(&edges, &source_id, &target_id, edge_type) {
         return Err(Error::WouldCreateCycle(source_id, target_id));
     }
 
@@ -65,22 +61,12 @@ pub fn run(
         created_at: chrono::Utc::now().timestamp(),
     };
 
-    let content = storage::serialize_edge(&edge)?;
-    let oid = storage::write_blob(&repo, &content)?;
+    snapshot::save_edge(
+        &repo,
+        &edge,
+        &format!("{} {} {}", source_id, edge_type.as_str(), target_id),
+    )?;
 
-    edge_index.entries.push(crate::index::EdgeEntry {
-        source: source_id.clone(),
-        target: target_id.clone(),
-        edge_type,
-        oid,
-    });
-    edge_index.save(repo_path)?;
-
-    println!(
-        "{} {} {}",
-        source_id,
-        edge_type.as_str(),
-        target_id
-    );
+    println!("{} {} {}", source_id, edge_type.as_str(), target_id);
     Ok(())
 }

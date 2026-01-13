@@ -1,9 +1,9 @@
 use git2::Repository;
 
 use crate::error::Error;
-use crate::index::IssueIndex;
+use crate::snapshot;
 use crate::storage;
-use crate::types::{Issue, IssueType, Priority};
+use crate::types::{IssueType, Priority};
 
 pub fn run(
     id_prefix: String,
@@ -14,12 +14,9 @@ pub fn run(
     labels: Option<Vec<String>>,
 ) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
-    let mut index = IssueIndex::load(repo_path)?;
 
-    let (id, oid) = index.find_unique(&id_prefix)?;
-    let data = storage::read_blob(&repo, oid)?;
-    let mut issue = Issue::from_json(&data)?;
+    let id = snapshot::find_issue_id(&repo, &id_prefix)?;
+    let mut issue = snapshot::load_issue(&repo, &id)?;
 
     if let Some(t) = title {
         issue.title = t;
@@ -41,10 +38,7 @@ pub fn run(
     issue.updated_at = chrono::Utc::now().timestamp();
     issue.editor = storage::get_editor()?;
 
-    let content = storage::serialize_issue(&issue)?;
-    let new_oid = storage::write_blob(&repo, &content)?;
-    index.entries.insert(id.clone(), new_oid);
-    index.save(repo_path)?;
+    snapshot::save_issue(&repo, &issue, &format!("Update issue {}", id))?;
 
     println!("Updated {}", id);
     Ok(())

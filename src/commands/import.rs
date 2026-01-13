@@ -4,8 +4,7 @@ use git2::Repository;
 use serde::Deserialize;
 
 use crate::error::Error;
-use crate::index::{EdgeEntry, EdgeIndex, IssueIndex};
-use crate::storage;
+use crate::snapshot;
 use crate::types::{Edge, Issue};
 
 #[derive(Deserialize)]
@@ -20,11 +19,10 @@ struct Import {
 
 pub fn run(file: String) -> Result<(), Error> {
     let repo = Repository::discover(".")?;
-    let repo_path = repo.workdir().ok_or(Error::BareRepo)?;
 
     // Load existing data
-    let mut issue_index = IssueIndex::load(repo_path)?;
-    let mut edge_index = EdgeIndex::load(repo_path)?;
+    let existing_issues = snapshot::load_issues(&repo)?;
+    let existing_edges = snapshot::load_edges(&repo)?;
 
     // Parse import file
     let content = fs::read_to_string(&file)?;
@@ -36,51 +34,50 @@ pub fn run(file: String) -> Result<(), Error> {
 
     // Merge issues (LWW by Lamport)
     for imported_issue in import.issues {
-        if let Some(&existing_oid) = issue_index.entries.get(&imported_issue.id) {
+        if let Some(existing_issue) = existing_issues.get(&imported_issue.id) {
             // Issue exists - check Lamport clock
-            let existing_data = storage::read_blob(&repo, existing_oid)?;
-            let existing_issue = Issue::from_json(&existing_data)?;
-
             if imported_issue.lamport > existing_issue.lamport {
                 // Imported is newer - replace
-                let content = storage::serialize_issue(&imported_issue)?;
-                let oid = storage::write_blob(&repo, &content)?;
-                issue_index.entries.insert(imported_issue.id.clone(), oid);
+                snapshot::save_issue(
+                    &repo,
+                    &imported_issue,
+                    &format!("Import: update issue {}", imported_issue.id),
+                )?;
                 issues_updated += 1;
             }
         } else {
             // New issue - insert
-            let content = storage::serialize_issue(&imported_issue)?;
-            let oid = storage::write_blob(&repo, &content)?;
-            issue_index.entries.insert(imported_issue.id.clone(), oid);
+            snapshot::save_issue(
+                &repo,
+                &imported_issue,
+                &format!("Import: add issue {}", imported_issue.id),
+            )?;
             issues_added += 1;
         }
     }
 
     // Merge edges (union - skip duplicates)
     for imported_edge in import.edges {
-        let exists = edge_index.exists(
-            &imported_edge.source,
-            &imported_edge.target,
-            imported_edge.edge_type,
-        );
+        let exists = existing_edges.iter().any(|e| {
+            e.source == imported_edge.source
+                && e.target == imported_edge.target
+                && e.edge_type == imported_edge.edge_type
+        });
 
         if !exists {
-            let content = storage::serialize_edge(&imported_edge)?;
-            let oid = storage::write_blob(&repo, &content)?;
-            edge_index.entries.push(EdgeEntry {
-                source: imported_edge.source,
-                target: imported_edge.target,
-                edge_type: imported_edge.edge_type,
-                oid,
-            });
+            snapshot::save_edge(
+                &repo,
+                &imported_edge,
+                &format!(
+                    "Import: add edge {} {} {}",
+                    imported_edge.source,
+                    imported_edge.edge_type.as_str(),
+                    imported_edge.target
+                ),
+            )?;
             edges_added += 1;
         }
     }
-
-    // Save indices
-    issue_index.save(repo_path)?;
-    edge_index.save(repo_path)?;
 
     println!(
         "Imported: {} issues added, {} issues updated, {} edges added",
