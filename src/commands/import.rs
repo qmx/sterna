@@ -61,7 +61,10 @@ pub fn run(file: String) -> Result<(), Error> {
         }
 
         // Check for cycles (skip for RelatesTo and Duplicates)
-        if !matches!(imported_edge.edge_type, EdgeType::RelatesTo | EdgeType::Duplicates) {
+        if !matches!(
+            imported_edge.edge_type,
+            EdgeType::RelatesTo | EdgeType::Duplicates
+        ) {
             if dag::would_create_cycle(
                 &current_edges,
                 &imported_edge.source,

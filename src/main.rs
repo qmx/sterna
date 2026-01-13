@@ -265,7 +265,11 @@ fn main() {
             issue_type,
             label,
         } => commands::create::run(title, description, priority, issue_type, label),
-        Commands::List { status, issue_type, json } => commands::list::run(status, issue_type, json),
+        Commands::List {
+            status,
+            issue_type,
+            json,
+        } => commands::list::run(status, issue_type, json),
         Commands::Get { id, json } => commands::get::run(id, json),
         Commands::Claim { id, context } => commands::claim::run(id, context),
         Commands::Release { id, reason } => commands::release::run(id, reason),
@@ -281,10 +285,22 @@ fn main() {
             label,
         } => commands::update::run(id, title, description, priority, issue_type, label),
         Commands::Dep(cmd) => match cmd {
-            DepCommands::Add { source, needs, blocks, relates_to, parent, duplicates } =>
-                commands::dep::add(source, needs, blocks, relates_to, parent, duplicates),
-            DepCommands::Remove { source, needs, blocks, relates_to, parent, duplicates } =>
-                commands::dep::remove(source, needs, blocks, relates_to, parent, duplicates),
+            DepCommands::Add {
+                source,
+                needs,
+                blocks,
+                relates_to,
+                parent,
+                duplicates,
+            } => commands::dep::add(source, needs, blocks, relates_to, parent, duplicates),
+            DepCommands::Remove {
+                source,
+                needs,
+                blocks,
+                relates_to,
+                parent,
+                duplicates,
+            } => commands::dep::remove(source, needs, blocks, relates_to, parent, duplicates),
         },
         Commands::Export { output } => commands::export::run(output),
         Commands::Import { file } => commands::import::run(file),

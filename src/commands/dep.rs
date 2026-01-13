@@ -96,13 +96,28 @@ pub fn remove(
         &source_id,
         &target_id,
         edge_type,
-        &format!("Remove edge: {} {} {}", source_id, edge_type.as_str(), target_id),
+        &format!(
+            "Remove edge: {} {} {}",
+            source_id,
+            edge_type.as_str(),
+            target_id
+        ),
     )?;
 
     if deleted {
-        println!("Removed: {} {} {}", source_id, edge_type.as_str(), target_id);
+        println!(
+            "Removed: {} {} {}",
+            source_id,
+            edge_type.as_str(),
+            target_id
+        );
     } else {
-        println!("Edge not found: {} {} {}", source_id, edge_type.as_str(), target_id);
+        println!(
+            "Edge not found: {} {} {}",
+            source_id,
+            edge_type.as_str(),
+            target_id
+        );
     }
     Ok(())
 }

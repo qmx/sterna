@@ -4,7 +4,7 @@ use crate::error::Error;
 use crate::id;
 use crate::snapshot;
 use crate::storage;
-use crate::types::{Issue, IssueType, Priority, Status, SCHEMA_VERSION};
+use crate::types::{Issue, IssueType, Priority, SCHEMA_VERSION, Status};
 
 pub fn run(
     title: String,

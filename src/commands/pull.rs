@@ -9,11 +9,7 @@ pub fn run(remote: Option<String>) -> Result<(), Error> {
     let remote_name = remote.unwrap_or_else(|| "origin".to_string());
 
     let mut git_remote = repo.find_remote(&remote_name)?;
-    git_remote.fetch(
-        &["refs/sterna/snapshot:refs/sterna/remote"],
-        None,
-        None,
-    )?;
+    git_remote.fetch(&["refs/sterna/snapshot:refs/sterna/remote"], None, None)?;
 
     let remote_ref = repo.find_reference("refs/sterna/remote")?;
     let remote_commit = remote_ref.peel_to_commit()?;

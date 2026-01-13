@@ -169,7 +169,12 @@ pub fn load_edges(repo: &Repository) -> Result<Vec<Edge>, Error> {
 }
 
 /// Check if an edge already exists
-pub fn edge_exists(repo: &Repository, source: &str, target: &str, edge_type: EdgeType) -> Result<bool, Error> {
+pub fn edge_exists(
+    repo: &Repository,
+    source: &str,
+    target: &str,
+    edge_type: EdgeType,
+) -> Result<bool, Error> {
     let edges = load_edges(repo)?;
     Ok(edges
         .iter()
@@ -231,7 +236,12 @@ pub fn save_edge(repo: &Repository, edge: &Edge, message: &str) -> Result<(), Er
     let blob_oid = repo.blob(&blob_content)?;
 
     // Edge filename: source_target_type
-    let edge_name = format!("{}_{}_{}", edge.source, edge.target, edge.edge_type.as_str());
+    let edge_name = format!(
+        "{}_{}_{}",
+        edge.source,
+        edge.target,
+        edge.edge_type.as_str()
+    );
 
     let mut edges_builder = repo.treebuilder(Some(&edges_tree))?;
     edges_builder.insert(&edge_name, blob_oid, 0o100644)?;
@@ -287,7 +297,12 @@ pub fn merge_snapshot(
 
     let mut edges_builder = repo.treebuilder(Some(&edges_tree))?;
     for edge in edges {
-        let edge_name = format!("{}_{}_{}", edge.source, edge.target, edge.edge_type.as_str());
+        let edge_name = format!(
+            "{}_{}_{}",
+            edge.source,
+            edge.target,
+            edge.edge_type.as_str()
+        );
         let blob_content = serde_json::to_vec(edge)?;
         let blob_oid = repo.blob(&blob_content)?;
         edges_builder.insert(&edge_name, blob_oid, 0o100644)?;
