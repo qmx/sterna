@@ -4,50 +4,36 @@ use std::path::PathBuf;
 use crate::commands::ready;
 use crate::error::Error;
 
-const DEFAULT_PRIME: &str = r#"# Sterna Command Reference
+const DEFAULT_PRIME: &str = r#"# Sterna Workflow
 
-## Quick Start Workflow
-1. Find work: `st ready`
-2. Claim it: `st claim <id>`
+## Core Loop
+1. `st ready` - Find available work
+2. `st claim <id>` - Take ownership
 3. Do the work
-4. Close it: `st close <id>` (or commit with "Closes: <id>")
+4. `st close <id>` - Mark complete
 
 ## Session Checklist
-At session end:
+Before saying "done":
 - [ ] All work committed
-- [ ] Claimed issues either closed or released
-- [ ] New discovered work captured via `st create`
+- [ ] Claimed issues closed or released
+- [ ] Discovered work captured via `st create`
 
-## Core Commands
-- st init              Initialize Sterna in repository
-- st create <title>    Create new issue
-- st list              List all issues
-- st get <id>          Show issue details
-- st update <id>       Update issue fields
-
-## Workflow Commands
-- st ready             Show issues ready for work (open, unclaimed, unblocked)
-- st claim <id>        Claim an issue to work on
-- st release <id>      Release a claimed issue
-- st close <id>        Close an issue
-- st reopen <id>       Reopen a closed issue
+## Essential Commands
+- `st ready` - Unblocked issues ready for work
+- `st claim <id>` - Claim an issue
+- `st close <id>` - Close an issue
+- `st create "title"` - Create new issue
+- `st get <id>` - Show issue details
 
 ## Dependencies
-- st dep add <src> --needs <tgt>      Source needs target done first
-- st dep add <src> --blocks <tgt>     Source blocks target
-- st dep add <src> --relates-to <tgt>
-- st dep add <src> --parent <tgt>
-- st dep add <src> --duplicates <tgt>
-- st dep remove <src> --needs <tgt>   Remove a dependency
+- `st dep add <src> --needs <tgt>` - src depends on tgt
+- `st dep add <src> --blocks <tgt>` - src blocks tgt
+- `st dep remove <src> --needs <tgt>` - Remove dependency
 
-## Data Management
-- st export            Export all data to JSON
-- st import <file>     Import data from JSON
-- st purge             Remove all Sterna data
-
-## Agent Commands
-- st onboard           Show onboarding info
-- st prime             Show this reference
+## Rules
+- Check `st ready` at session start
+- Claim before starting work
+- Close or release before ending session
 
 ---
 "#;
