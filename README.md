@@ -16,6 +16,11 @@ Sterna gives agents a persistent, structured place to track work:
 
 ## Installation
 
+**With Homebrew:**
+```bash
+brew install --HEAD qmx/tap/sterna
+```
+
 **From source:**
 ```bash
 cargo install --path .
